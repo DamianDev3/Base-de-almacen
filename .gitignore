@@ -1,0 +1,15 @@
+# Ejecutables y objetos compilados
+*.exe
+*.o
+*.obj
+
+# Carpetas de compilación y temporales de VS Code
+.vscode/
+bin/
+build/
+output/
+
+# Base de datos local (evita sobreescribir datos reales de prueba)
+almacen.db
+almacen.db-journal
+almacen.db-wal
