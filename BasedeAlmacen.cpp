@@ -1,8 +1,5 @@
 #include "BasedeAlmacen.h"
-#include "Categorias.h"
-#include "ArchivoCategoria.h"
-#include "ArchivoSubcategoria.h"
-#include "subCategoria.h"
+#include "GestorBaseDatos.h"
 #include <iostream>
 #include <cstring>
 #include <string> 

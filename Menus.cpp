@@ -1,14 +1,12 @@
 #include "Menus.h"
 #include "Categorias.h"
-#include "ArchivoCategoria.h"
-#include "ArchivoSubcategoria.h"
 #include "subCategoria.h"
 #include "BasedeAlmacen.h"
 #include "GestorBaseDatos.h"
+#include "Productos.h"
+#include "windows.h"
 #include <iostream>
 using namespace std;
-////CREAR LA RELACION ENTRE CADA PRODUCTOS Y CATEGORIAS Y GENERAR LOS PRECIOS PARA CADA PRODUCTO, DESPUES GENERAR LOS MOVIMIENTOS AUTOMATICOS JUNTO SUS CLASES
-////GENERAR MAS TABLAS EN LA BASE DE DATOS
 
 void Menus::Menugeneral()
 {
@@ -17,9 +15,8 @@ void Menus::Menugeneral()
     bool condicion = false;
     BasedeAlmacen almacen;
     Categorias cat;
+    Productos productin;
     subCategoria subCat;
-    ArchivoCategoria archiCat;
-    ArchivoSubcategoria archiSubC;
     GestorBaseDatos bd;
     do 
     {
@@ -28,7 +25,7 @@ void Menus::Menugeneral()
         cout << "Menu General:" <<endl;
         cout << "Ingresar opcion deseada:" << endl;
         cout << "1- Base de Almacen:" <<endl;
-        cout << "2- Lista de Subcategorias:" <<endl;
+        cout << "2- buscar en base de datos por id:" <<endl;
         cout << "3- Categorias guardadas:" <<endl;
         cout << "4- Sub categorias guardadas:" <<endl;
         cout << "5- Base de datos almacen:" <<endl;
@@ -48,17 +45,15 @@ void Menus::Menugeneral()
             almacen.MostrarBaseAlmacen();
             break;
             case 2:
-           subCat.mostrarCatalogoInicial();
+           productin.lecturaProducto();
          break;
             case 3:
-            archiCat.Categoriasguardadas();
             break;
     
             case 4:
-            archiSubC.subCategoriaGuardada();
             break;
             case 5:
-            bd.mostrarBD();
+            
             break; 
         case 0:
         cout << "SALIENDO DEL PROGRAMA:" <<endl;

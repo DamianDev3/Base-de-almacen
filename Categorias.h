@@ -6,17 +6,17 @@ class Categorias
 {
     private:
     int _idCategoria;
-    char _nombreCategoria[30];
+    std::string _nombreCategoria;
     bool _estadoCategoria;
 
     public:
     Categorias();
-    Categorias(int, const char*, bool);
+    Categorias(int, std::string, bool);
     int getIdCategoria();
-    const char* getNombreCategoria();
+    std::string getNombreCategoria();
     bool getEstadoCategoria();
     void setIdCategoria(int);
-    void setNombreCategoria(const char*);
+    void setNombreCategoria(std::string);
     void setEstadoCategoria(bool);
     void listaCategorias();
 };

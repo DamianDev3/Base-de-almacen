@@ -5,24 +5,23 @@ class subCategoria
     public:
     /* CONSTRUCTORES Y SETTERS*/
     subCategoria();
-    subCategoria(int,int, const char*,bool);
+    subCategoria(int,int, std::string,bool);
     void setIdSubcategoria(int);
-    void setnombreSubcategoria(const char*);
+    void setnombreSubcategoria(std::string);
     void setEstadoSubcategoria(bool);
     void setIDpadre(int);
 
     /// GETTERS
     int getIdSubcategoria();
-    const char* getNombreSubcategoria();
+    std::string getNombreSubcategoria();
     bool getEstadoSubcategoria();
-    int getCategoriaP();
     int getIdPadre(); 
     void mostrarCatalogoInicial();
 
     private:
     int _idSubcategoria;
     int _idPadre;
-    char _nombresubCategoria [105];
+    std::string _nombresubCategoria;
     bool _estadoSubcategoria;
 
 };
