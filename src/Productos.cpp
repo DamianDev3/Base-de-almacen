@@ -1,5 +1,5 @@
-#include "Productos.h"
-#include "GestorBaseDatos.h"
+#include "../include/Productos.h"
+#include "../include/GestorBaseDatos.h"
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -149,7 +149,7 @@ void Productos::lecturaProducto()
 {
     int idBuscado;
     GestorBaseDatos datos;
-    if(!datos.conectar("almacen.db")) 
+    if(!datos.conectar("db/Almacen.db")) 
     {
         cout << "No se pudo conectar a la base de datos:" <<endl;
         return;

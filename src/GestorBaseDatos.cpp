@@ -1,7 +1,7 @@
-#include "GestorBaseDatos.h"
-#include "Productos.h"
-#include "subCategoria.h"
-#include "Categorias.h"
+#include "../include/GestorBaseDatos.h"
+#include "../include/Productos.h"
+#include "../include/subCategoria.h"
+#include "../include/Categorias.h"
 #include <iostream>
 
 using namespace std;

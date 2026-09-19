@@ -1,5 +1,5 @@
-#include "ClaseUsuarios.h"
-#include "GestorBaseDatos.h"
+#include "../include/ClaseUsuarios.h"
+#include "../include/GestorBaseDatos.h"
 #include <iostream>
 #include <cstring>
 #include <string>

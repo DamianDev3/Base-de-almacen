@@ -1,5 +1,5 @@
-#include "Categorias.h"
-#include "GestorBaseDatos.h"
+#include "../include/Categorias.h"
+#include "../include/GestorBaseDatos.h"
 #include <iostream>
 #include <string>
 #include <cstring>

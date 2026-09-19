@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include <string>
-#include "sqlite3.h"
+#include "../lib/sqlite/sqlite3.h"
 
 class Productos {
 public:

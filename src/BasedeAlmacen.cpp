@@ -1,5 +1,5 @@
-#include "BasedeAlmacen.h"
-#include "GestorBaseDatos.h"
+#include "../include/BasedeAlmacen.h"
+#include "../include/GestorBaseDatos.h"
 #include <iostream>
 #include <cstring>
 #include <string> 

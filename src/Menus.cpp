@@ -1,9 +1,9 @@
-#include "Menus.h"
-#include "Categorias.h"
-#include "subCategoria.h"
-#include "BasedeAlmacen.h"
-#include "GestorBaseDatos.h"
-#include "Productos.h"
+#include "../include/Menus.h"
+#include "../include/Categorias.h"
+#include "../include/subCategoria.h"
+#include "../include/BasedeAlmacen.h"
+#include "../include/GestorBaseDatos.h"
+#include "../include/Productos.h"
 #include "windows.h"
 #include <iostream>
 using namespace std;
