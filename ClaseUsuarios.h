@@ -1,16 +1,26 @@
-#ifndef CLASEUSUARIOS_H
-#define CLASEUSUARIOS_H
-
 #pragma once
-
+#include <string>
 class ClaseUsuarios
 {
 public:
+    /// Constructores:
     ClaseUsuarios();
-    ~ClaseUsuarios();
+    ClaseUsuarios(int id, const std::string& nombre, const std::string& rol, const std::string& password); 
+    void setIdUsuario(int);
+    void setNombreUsuario(std::string);
+    void setRolUsuario(std::string);
+    void setPassword(std::string);
+
+    int getIdUsuario();
+    std::string getNombreUsuario();
+    std::string getRolUsuario();
+    std::string getPassword();
+
+    void cargaDeUsuario();
 
 private:
-
+int _idUsuario;
+std::string _nombreUsuario;
+std::string _rolUsuario;
+std::string _password;
 };
-
-#endif

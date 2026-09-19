@@ -305,3 +305,15 @@ void GestorBaseDatos::CategoriasMod()
     sqlite3_finalize(stmtUpdate);
     
 }
+
+void GestorBaseDatos::AltaDeUsuario(string nombreu,string roluser,string password)
+{
+ if (_db == nullptr) {
+    cout << "Base de datos no conectada:" << endl;
+    return; 
+ }
+    const char* sqlSelect = "SELECT id_usuario, Nombre_usuario, Password_usuario, Rol_usuario FROM Usuarios ;";
+sqlite3_stmt* sqlSelectUser  = nullptr;
+
+ 
+}

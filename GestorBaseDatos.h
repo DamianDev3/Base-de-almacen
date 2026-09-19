@@ -6,7 +6,6 @@ using namespace std;
 
 class GestorBaseDatos
 {
-    /// HACER UNA FUNCION QUE BUSQUE POR CATEGORIA PARA QUE MUESTRE LAS SUBCATEGORIAS Y CONSECUENTEMENTE EL PRODUCTO Y SUS PROPIEDADES, LUEGO RELACIONARLOS CON LOS SETTERS DE LA CLASE PRODUCTO
 public:
 GestorBaseDatos();
 ~GestorBaseDatos();
@@ -18,6 +17,9 @@ void buscarCategoria(int);
 void ModificarStockGeneral();
 void SubcategoriasMod();
 void CategoriasMod();
+void AltaDeUsuario(std::string,std::string,std::string);
+
+
 
 private:
 sqlite3* _db;
