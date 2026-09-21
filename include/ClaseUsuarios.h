@@ -8,11 +8,13 @@ public:
     ClaseUsuarios(int id, const std::string& nombre, const std::string& rol, const std::string& password); 
     void setIdUsuario(int);
     void setNombreUsuario(std::string);
+    void setApellidoUsuario(std::string);
     void setRolUsuario(std::string);
     void setPassword(std::string);
 
     int getIdUsuario();
     std::string getNombreUsuario();
+    std::string getApellidoUsuario();
     std::string getRolUsuario();
     std::string getPassword();
 
@@ -21,6 +23,7 @@ public:
 private:
 int _idUsuario;
 std::string _nombreUsuario;
+std::string _apellidoUsuario;
 std::string _rolUsuario;
 std::string _password;
 };

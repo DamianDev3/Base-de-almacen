@@ -13,3 +13,4 @@ output/
 almacen.db
 almacen.db-journal
 almacen.db-wal
+*.db.bak

@@ -17,7 +17,8 @@ void buscarCategoria(int);
 void ModificarStockGeneral();
 void SubcategoriasMod();
 void CategoriasMod();
-void AltaDeUsuario(std::string,std::string,std::string);
+void AltaDeUsuario(std::string,std::string,std::string,std::string);
+
 
 
 

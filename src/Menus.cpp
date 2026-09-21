@@ -4,6 +4,7 @@
 #include "../include/BasedeAlmacen.h"
 #include "../include/GestorBaseDatos.h"
 #include "../include/Productos.h"
+#include "../include/ClaseUsuarios.h"
 #include "windows.h"
 #include <iostream>
 using namespace std;
@@ -18,15 +19,16 @@ void Menus::Menugeneral()
     Productos productin;
     subCategoria subCat;
     GestorBaseDatos bd;
+    ClaseUsuarios altaUser;
     do 
     {
         system("cls");
         
         cout << "Menu General:" <<endl;
         cout << "Ingresar opcion deseada:" << endl;
-        cout << "1- Base de Almacen:" <<endl;
-        cout << "2- buscar en base de datos por id:" <<endl;
-        cout << "3- Categorias guardadas:" <<endl;
+        cout << "1- Alta de usuario:" <<endl;
+        cout << "2- Mostrar Almacen:" <<endl;
+        cout << "3- Leer producto:" <<endl;
         cout << "4- Sub categorias guardadas:" <<endl;
         cout << "5- Base de datos almacen:" <<endl;
         cout << "0- Salir del programa:" <<endl; 
@@ -42,14 +44,14 @@ void Menus::Menugeneral()
         switch (opciones)
         {
         case 1:
-            almacen.MostrarBaseAlmacen();
+        altaUser.cargaDeUsuario();
+        break;
+        case 2:
+        almacen.MostrarBaseAlmacen();
+        break;
+        case 3:
+        productin.lecturaProducto();
             break;
-            case 2:
-           productin.lecturaProducto();
-         break;
-            case 3:
-            break;
-    
             case 4:
             break;
             case 5:

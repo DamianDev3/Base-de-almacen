@@ -1,0 +1,57 @@
+sqlite_orm 1.6 - ORM para SQLite (header-only)
+==============================================
+
+¿Qué es?
+  Librería ORM para C++: permite mapear clases a tablas de SQLite sin
+  escribir SQL a mano (insert, get, update, remove, where, etc.).
+  Es "header only": alcanza con incluir este único archivo.
+
+Versión instalada: 1.6
+  Es la última versión compatible con el MinGW GCC 6.3 del proyecto
+  (C++14). Las versiones v1.7 en adelante requieren C++17 y NO compilan
+  con este compilador.
+
+Licencia:
+  AGPL-3.0 para proyectos open source. Para uso comercial cerrado hay
+  una licencia MIT paga. Ver: https://github.com/fnc12/sqlite_orm
+
+Cómo usarla
+-----------
+1) Incluir el header (la ruta -Ilib/sqlite_orm ya está en .vscode/tasks.json):
+
+     #include "../lib/sqlite_orm/sqlite_orm.h"
+
+2) Definir las clases del modelo (miembros públicos, constructor por defecto).
+
+3) Armar el storage indicando tabla y columnas:
+
+     using namespace sqlite_orm;
+
+     auto storage = make_storage("db/Almacen.db",
+         make_table("Usuarios",
+             make_column("id_usuarios", &Usuario::id, primary_key(), autoincrement()),
+             make_column("Nombre_usuario", &Usuario::nombre, unique()),
+             make_column("Apellido_usuario", &Usuario::apellido),
+             make_column("Password_usuario", &Usuario::password),
+             make_column("Rol_usuario", &Usuario::rol)));
+
+4) Operaciones típicas:
+
+     storage.insert(usuario);                      // INSERT
+     auto u = storage.get<Usuario>(1);             // SELECT por id
+     auto lista = storage.get_all<Usuario>();      // SELECT *
+     storage.update(usuario);                      // UPDATE
+     storage.remove<Usuario>(1);                   // DELETE
+     storage.remove_all<Usuario>(where(c(&Usuario::rol) == "VENDEDOR"));
+
+Advertencias
+------------
+- NO llamar a storage.sync_schema() sobre la base real sin revisar antes:
+  si el mapeo no coincide exactamente con la tabla existente, puede
+  recrearla y perder datos. Probar siempre sobre una copia.
+- sqlite_orm abre su propia conexión al archivo; puede convivir con la
+  clase GestorBaseDatos sin problema, pero conviene migrar de a poco.
+- En esta versión autoincrement() va como constraint SEPARADO:
+
+      primary_key(), autoincrement()     <- correcto en 1.6
+      primary_key().autoincrement()      <- solo en v1.7 o superior

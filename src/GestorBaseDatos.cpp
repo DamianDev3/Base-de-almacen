@@ -2,6 +2,7 @@
 #include "../include/Productos.h"
 #include "../include/subCategoria.h"
 #include "../include/Categorias.h"
+#include "../include/ClaseUsuarios.h"
 #include <iostream>
 
 using namespace std;
@@ -306,14 +307,34 @@ void GestorBaseDatos::CategoriasMod()
     
 }
 
-void GestorBaseDatos::AltaDeUsuario(string nombreu,string roluser,string password)
+void GestorBaseDatos::AltaDeUsuario( string nombreu, string apellidou, string roluser, string password)
 {
- if (_db == nullptr) {
-    cout << "Base de datos no conectada:" << endl;
-    return; 
- }
-    const char* sqlSelect = "SELECT id_usuario, Nombre_usuario, Password_usuario, Rol_usuario FROM Usuarios ;";
-sqlite3_stmt* sqlSelectUser  = nullptr;
+    if (_db == nullptr) {
+        cout << "Base de datos no conectada:" << endl;
+        return; 
+    }
 
- 
+    const char* sqlInsert = "INSERT INTO Usuarios (Nombre_usuario, Apellido_usuario, Password_usuario, Rol_usuario) VALUES (?, ?, ?, ?);";
+    sqlite3_stmt* stmtInsertUser = nullptr;
+
+    if (sqlite3_prepare_v2(_db, sqlInsert, -1, &stmtInsertUser, nullptr) != SQLITE_OK)
+    {
+        cout << "Error al preparar la consulta:" << sqlite3_errmsg(_db) << endl;
+        sqlite3_finalize(stmtInsertUser);
+        return;
+    }
+    sqlite3_bind_text(stmtInsertUser,1,nombreu.c_str(),-1,SQLITE_STATIC);
+    sqlite3_bind_text(stmtInsertUser,2,apellidou.c_str(),-1,SQLITE_STATIC);
+    sqlite3_bind_text(stmtInsertUser,3,password.c_str(),-1,SQLITE_STATIC);
+    sqlite3_bind_text(stmtInsertUser,4,roluser.c_str(),-1,SQLITE_STATIC);
+    
+    if (sqlite3_step(stmtInsertUser) == SQLITE_DONE)
+    {
+        cout << "USUARIO AGREGADO!!" <<endl;
+
+    }else 
+    {
+        cout << "ERROR AL INGRESAR AL USUARIO:" <<sqlite3_errmsg(_db) <<endl;
+    }
+    sqlite3_finalize(stmtInsertUser);
 }
