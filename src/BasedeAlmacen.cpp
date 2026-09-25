@@ -8,6 +8,7 @@ using namespace std;
 void BasedeAlmacen::MostrarBaseAlmacen()
 {
     system("cls");
+    
 cout << "================================================================================" << endl;
     cout << "                             BASE DE ALMACEN - PRODUCTOS                        " << endl;
     cout << "================================================================================" << endl;

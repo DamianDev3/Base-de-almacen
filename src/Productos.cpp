@@ -6,6 +6,7 @@
 using namespace std;
 Productos::Productos()
 {
+    _idProducto = 0;
     _eanProductos = "sin_ean"; 
     _Nombreproductos = "sin_nombre"; 
     _marcaProducto = "sin_marca";
@@ -16,13 +17,13 @@ Productos::Productos()
     _stockActual = 0;
     _stockMinimo = 0;
     _stockObjetivo = 0;
-    _idProducto = 0;
     _idCategoria = 0;
     _idSubcategoria = 0;
 }
 
-Productos::Productos(string eanProducto,string Nombreproducto,string marcaProducto,string variantes,string contenido,int unidades,float precioVenta,int stockActual,int stockMinimo,int stockObjetivo,int idCategoria,int idSubcategoria,int idPdoructo)
+Productos::Productos(int idProducto,string eanProducto,string Nombreproducto,string marcaProducto,string variantes,string contenido,int unidades,float precioVenta,int stockActual,int stockMinimo,int stockObjetivo,int idCategoria,int idSubcategoria)
 {
+    _idProducto = idProducto;
     _eanProductos = eanProducto;
     _Nombreproductos = Nombreproducto;
     _marcaProducto = marcaProducto;
@@ -33,12 +34,15 @@ Productos::Productos(string eanProducto,string Nombreproducto,string marcaProduc
     _stockActual = stockActual;
     _stockMinimo = stockMinimo;
     _stockObjetivo = stockObjetivo;
-    _idProducto = idPdoructo;
     _idCategoria = idCategoria;
     _idSubcategoria = idSubcategoria;
 }
 
 /// SETTERS
+void Productos::setIdProducto(int idProducto)
+{
+    _idProducto = idProducto;
+}
 
 void Productos::setEan(string ean) {
     _eanProductos = ean;
@@ -88,63 +92,60 @@ void Productos::setIdSubcategoria(int idSubcategoria) {
     _idSubcategoria = idSubcategoria;
 }
 
-void Productos::setIdProducto(int idProducto) {
-    _idProducto = idProducto;
+/// GETTERS
+int Productos::getIdProducto() const
+{
+    return _idProducto;
 }
 
-/// GETTERS
-
-string Productos::getEan() {
+string Productos::getEan() const {
     return _eanProductos;
 }
 
-string Productos::getNombreProducto() {
+string Productos::getNombreProducto() const {
     return _Nombreproductos;
 }
 
-string Productos::getMarcaProducto() {
+string Productos::getMarcaProducto() const {
     return _marcaProducto;
 }
 
-string Productos::getVariantes() {
+string Productos::getVariantes() const {
     return _variantes;
 }
 
-string Productos::getContenido() {
+string Productos::getContenido() const {
     return _contenido;
 }
 
-int Productos::getUnidades() {
+int Productos::getUnidades() const {
     return _unidades;
 }
 
-float Productos::getPrecio() {
+float Productos::getPrecio() const {
     return _precioVenta;
 }
 
-int Productos::getStockminimo() {
+int Productos::getStockMinimo() const {
     return _stockMinimo;
 }
 
-int Productos::getStockObjetivo() {
+int Productos::getStockObjetivo() const {
     return _stockObjetivo;
 }
 
-int Productos::getStockActual() {
+int Productos::getStockActual() const {
     return _stockActual;
 }
 
-int Productos::getIdCategoria() {
+int Productos::getIdCategoria() const {
     return _idCategoria;
 }
 
-int Productos::getIdSubcategoria() {
+int Productos::getIdSubcategoria() const {
     return _idSubcategoria;
 }
 
-int Productos::getIdProducto() {
-    return _idProducto;
-}
 void Productos::lecturaProducto()
 {
     int idBuscado;

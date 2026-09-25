@@ -7,9 +7,10 @@
 class Productos {
 public:
     Productos();
-    Productos(std::string, std::string, std::string, std::string, std::string, int, float, int, int, int, int, int, int);
+    Productos(int,std::string, std::string, std::string, std::string, std::string, int, float, int, int, int, int, int);
 
     /// SETTERS
+    void setIdProducto(int);
     void setEan(std::string);
     void setNombreProducto(std::string);
     void setMarcaProducto(std::string);
@@ -22,26 +23,26 @@ public:
     void setStockActual(int);
     void setIdCategoria(int);
     void setIdSubcategoria(int);
-    void setIdProducto(int);
 
     /// GETTERS
-    std::string getEan();
-    std::string getNombreProducto();
-    std::string getMarcaProducto();
-    std::string getVariantes();
-    std::string getContenido();
-    int getUnidades();
-    float getPrecio();
-    int getStockminimo();
-    int getStockObjetivo();
-    int getStockActual();
-    int getIdCategoria();
-    int getIdSubcategoria();
-    int getIdProducto();
+    int getIdProducto() const;
+    std::string getEan() const;
+    std::string getNombreProducto() const;
+    std::string getMarcaProducto() const;
+    std::string getVariantes() const;
+    std::string getContenido() const;
+    int getUnidades() const;
+    float getPrecio() const;
+    int getStockMinimo() const;
+    int getStockObjetivo() const;
+    int getStockActual() const;
+    int getIdCategoria() const;
+    int getIdSubcategoria() const;
     void lecturaProducto();
 
 private:
     /// Propiedades del producto
+    int _idProducto;
     std::string _eanProductos;
     std::string _Nombreproductos;
     std::string _marcaProducto;
@@ -54,7 +55,6 @@ private:
     int _stockActual;
 
     /// IDS
-    int _idProducto;
     int _idSubcategoria;
     int _idCategoria;
 };

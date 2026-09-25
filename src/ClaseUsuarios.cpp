@@ -42,25 +42,25 @@ void ClaseUsuarios::setPassword(string passwordUser)
 {
     _password = passwordUser;
 }
-int ClaseUsuarios::getIdUsuario()
+int ClaseUsuarios::getIdUsuario() const
 {
     return _idUsuario;
 
 }
-string ClaseUsuarios::getNombreUsuario()
+string ClaseUsuarios::getNombreUsuario() const
 {
     return _nombreUsuario;
 }
-string ClaseUsuarios::getApellidoUsuario()
+string ClaseUsuarios::getApellidoUsuario() const
 {
     return _apellidoUsuario;
 }
-string ClaseUsuarios::getRolUsuario()
+string ClaseUsuarios::getRolUsuario() const
 {
     return _rolUsuario;
 }
 
-string ClaseUsuarios::getPassword()
+string ClaseUsuarios::getPassword() const
 {
     return _password;
 }
@@ -69,11 +69,18 @@ void ClaseUsuarios::cargaDeUsuario()
     int opcion;
     GestorBaseDatos cargaUser;
     cargaUser.conectar("db/Almacen.db"); 
+    if (!cargaUser.conectar("db/Almacen.db"))
+    {
+        cout << "No se pudo conectar a la base de datos:" <<endl;
+        system("pause");
+        return;
+    }
+    
     bool carga = false;
     while (!carga)
     {
            cout << "Ingrese el Rol del usuario, 1- Para Administrador, 2- Para Logistica o 3- Para Vendedor:" <<endl;
-    cin >> opcion;
+        cin >> opcion;
              cin.ignore();
      if (cin.fail())
         {

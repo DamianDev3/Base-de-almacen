@@ -1,4 +1,5 @@
 #include "../include/Menus.h"
+#include "Ventas.h"
 #include "../include/Categorias.h"
 #include "../include/subCategoria.h"
 #include "../include/BasedeAlmacen.h"
@@ -14,12 +15,14 @@ void Menus::Menugeneral()
     /// porto menu todavia no esta listo.
     int opciones;
     bool condicion = false;
+    Ventas venta;
     BasedeAlmacen almacen;
     Categorias cat;
     Productos productin;
     subCategoria subCat;
     GestorBaseDatos bd;
     ClaseUsuarios altaUser;
+    
     do 
     {
         system("cls");
@@ -29,8 +32,9 @@ void Menus::Menugeneral()
         cout << "1- Alta de usuario:" <<endl;
         cout << "2- Mostrar Almacen:" <<endl;
         cout << "3- Leer producto:" <<endl;
-        cout << "4- Sub categorias guardadas:" <<endl;
-        cout << "5- Base de datos almacen:" <<endl;
+        cout << "4- Comprar producto:" <<endl;
+        cout << "5- Ventas:" <<endl;
+        cout << "6- Modificar categorias:" <<endl;
         cout << "0- Salir del programa:" <<endl; 
         cin >> opciones;
          cin.ignore();
@@ -47,16 +51,20 @@ void Menus::Menugeneral()
         altaUser.cargaDeUsuario();
         break;
         case 2:
-        almacen.MostrarBaseAlmacen();
+        bd.AlmacenInventario();
         break;
         case 3:
         productin.lecturaProducto();
             break;
             case 4:
+            bd.comprarProducto();
             break;
             case 5:
-            
+            bd.registrarVenta();
             break; 
+            case 6:
+            bd.CategoriasMod();
+            break;
         case 0:
         cout << "SALIENDO DEL PROGRAMA:" <<endl;
         system("pause");

@@ -12,11 +12,11 @@ public:
     void setRolUsuario(std::string);
     void setPassword(std::string);
 
-    int getIdUsuario();
-    std::string getNombreUsuario();
-    std::string getApellidoUsuario();
-    std::string getRolUsuario();
-    std::string getPassword();
+    int getIdUsuario() const;
+    std::string getNombreUsuario() const;
+    std::string getApellidoUsuario() const;
+    std::string getRolUsuario() const;
+    std::string getPassword() const;
 
     void cargaDeUsuario();
 
