@@ -6,14 +6,13 @@
 #include "../include/GestorBaseDatos.h"
 #include "../include/Productos.h"
 #include "../include/ClaseUsuarios.h"
+#include "../include/Selector.h"
 #include "windows.h"
 #include <iostream>
 using namespace std;
 
 void Menus::Menugeneral()
 {
-    /// porto menu todavia no esta listo.
-    int opciones;
     bool condicion = false;
     Ventas venta;
     BasedeAlmacen almacen;
@@ -22,61 +21,60 @@ void Menus::Menugeneral()
     subCategoria subCat;
     GestorBaseDatos bd;
     ClaseUsuarios altaUser;
-    
-    do 
+
+    const std::vector<std::pair<int, std::string>> opcionesDelMenu =
     {
-        system("cls");
-        
-        cout << "Menu General:" <<endl;
-        cout << "Ingresar opcion deseada:" << endl;
-        cout << "1- Alta de usuario:" <<endl;
-        cout << "2- Mostrar Almacen:" <<endl;
-        cout << "3- Leer producto:" <<endl;
-        cout << "4- Comprar producto:" <<endl;
-        cout << "5- Ventas:" <<endl;
-        cout << "6- Modificar categorias:" <<endl;
-        cout << "0- Salir del programa:" <<endl; 
-        cin >> opciones;
-         cin.ignore();
-     if (cin.fail())
+        {1, "Alta de usuario"},
+        {2, "Mostrar Almacen"},
+        {3, "Leer producto"},
+        {4, "Comprar producto"},
+        {5, "Ventas"},
+        {6, "Modificar categorias"},
+        {7, "Ultima venta realizada"},
+        {0, "Salir del programa"}
+    };
+
+    do
+    {
+        int opciones = Selector::elegirOpcion("Menu General", opcionesDelMenu);
+
+        if (opciones == Selector::CANCELADO)
         {
-         cin.clear();
-         cin.ignore(10000, '\n');
-         opciones=-1;
-             }
+            // Sin entrada (fin de archivo) o cancelado: se sale del programa.
+            condicion = true;
+            break;
+        }
 
         switch (opciones)
         {
         case 1:
-        altaUser.cargaDeUsuario();
-        break;
-        case 2:
-        bd.AlmacenInventario();
-        break;
-        case 3:
-        productin.lecturaProducto();
+            altaUser.cargaDeUsuario();
             break;
-            case 4:
+        case 2:
+            bd.AlmacenInventario();
+            break;
+        case 3:
+            productin.lecturaProducto();
+            break;
+        case 4:
             bd.comprarProducto();
             break;
-            case 5:
+        case 5:
             bd.registrarVenta();
-            break; 
-            case 6:
+            break;
+        case 6:
             bd.CategoriasMod();
             break;
+        case 7:
+            venta.ventaGenerada();
+            break;
         case 0:
-        cout << "SALIENDO DEL PROGRAMA:" <<endl;
-        system("pause");
-        condicion = true;
-        break;
+            cout << "SALIENDO DEL PROGRAMA:" << endl;
+            system("pause");
+            condicion = true;
+            break;
         default:
-        cout << "ERROR: solo se permiten numeros:" <<endl; 
             break;
         }
-    }while (!condicion);
-        
-    
-
-
+    } while (!condicion);
 }

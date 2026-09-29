@@ -3,7 +3,11 @@
 #include "../include/subCategoria.h"
 #include "../include/Categorias.h"
 #include "../include/ClaseUsuarios.h"
+#include "../include/Ventas.h"
+#include "../include/Selector.h"
 #include <iostream>
+#include <sstream>
+#include <utility>
 #include <vector>
 #include "../lib/sqlite_orm/sqlite_orm.h"
 
@@ -201,11 +205,12 @@ void GestorBaseDatos::AlmacenInventario()
         }
 
         cout << "================================================================================" << endl;
-        cout << " [N] Siguiente | [P] Anterior | [0] Volver al menu: ";
-        cin >> comando;
-        comando = static_cast<char>(std::toupper(comando));
+        cout << " [N] o [->] Siguiente | [P] o [<-] Anterior | [0] o [Enter] Volver al menu" << endl;
+        cout << " Opcion: ";
 
-        if (comando == 'N')
+        int tecla = Selector::leerTecla();
+
+        if (tecla == 'n' || tecla == 'N' || tecla == Selector::TECLA_DERECHA || tecla == Selector::TECLA_ABAJO)
         {
             if (paginaActual + 1 < totalPaginas)
             {
@@ -217,7 +222,7 @@ void GestorBaseDatos::AlmacenInventario()
                 system("pause");
             }
         }
-        else if (comando == 'P')
+        else if (tecla == 'p' || tecla == 'P' || tecla == Selector::TECLA_IZQUIERDA || tecla == Selector::TECLA_ARRIBA)
         {
             if (paginaActual > 0)
             {
@@ -228,6 +233,15 @@ void GestorBaseDatos::AlmacenInventario()
                 cout << "\n Ya estas en la primera pagina." << endl;
                 system("pause");
             }
+        }
+        else if (tecla == '0' || tecla == Selector::TECLA_ENTER || tecla == Selector::TECLA_ESCAPE || tecla == Selector::TECLA_FIN)
+        {
+            comando = '0';
+        }
+        else
+        {
+            cout << "\n Tecla no valida. Usa N, P, 0 o las flechas." << endl;
+            system("pause");
         }
     }
 }
@@ -339,6 +353,28 @@ void GestorBaseDatos::buscarCategoria(int idBuscadocat)
     system("pause");
 }
 
+int GestorBaseDatos::elegirCategoria(const std::string& titulo)
+{
+    /// Devuelve el ID de la categoria elegida por el usuario, o Selector::CANCELADO.
+    auto storage = crearStorageAlmacen();
+
+    auto categorias = storage.get_all<CategoriaORM>(order_by(&CategoriaORM::id));
+    if (categorias.empty())
+    {
+        cout << "No hay categorias cargadas en la base de datos." << endl;
+        system("pause");
+        return Selector::CANCELADO;
+    }
+
+    std::vector<std::pair<int, std::string>> lista;
+    for (auto &cat : categorias)
+    {
+        lista.push_back(std::make_pair(cat.id, cat.nombre));
+    }
+
+    return Selector::elegirDeLista(titulo, lista);
+}
+
 ClaseUsuarios GestorBaseDatos::validarUsuario()
 {
     string nombreUser, contraseniaUser, apellidoUser;
@@ -353,6 +389,13 @@ ClaseUsuarios GestorBaseDatos::validarUsuario()
         cout << "---------------------------------------------------------------------" << endl;    
         cout << "Nombre: ";
         cin >> nombreUser;
+
+        if (cin.eof())
+        {
+            cout << "Inicio de sesion cancelado." << endl;
+            system("pause");
+            return ClaseUsuarios();
+        }
 
         if (nombreUser == "0")
         {
@@ -428,11 +471,7 @@ void GestorBaseDatos::ModificarStockGeneral()
         cout << "Producto: " << prod.getNombreProducto() << endl;
         cout << "Stock actual registrado: " << prod.getStockActual() << endl;
 
-        char modificar = 'n';
-        cout << "¿Desea cambiar el stock de este producto? (s/n): ";
-        cin >> modificar;
-
-        if (modificar == 's' || modificar == 'S')
+        if (Selector::confirmar("¿Desea cambiar el stock de este producto?"))
         {
             int nuevoStock = 0;
             cout << "Ingrese el nuevo stock actual: ";
@@ -484,11 +523,7 @@ void GestorBaseDatos::SubcategoriasMod()
         cout << "\n----------------------------------------" << endl;
         cout << "ID: " << sub.id << " | Subcategoria actual: " << sub.nombre << endl;
 
-        char opcion = 'n';
-        cout << "¿Desea renombrar esta subcategoria? (s/n): ";
-        cin >> opcion;
-
-        if (opcion == 's' || opcion == 'S')
+        if (Selector::confirmar("¿Desea renombrar esta subcategoria?"))
         {
             string modificarNombre;
             cout << "Ingrese el nuevo nombre: ";
@@ -525,33 +560,21 @@ void GestorBaseDatos::CategoriasMod()
     /// 2) Menú inicial de decisión
     do
     {
-    
-        system("cls");
-        cout << "========================================" << endl;
-        cout << "       GESTION DE CATEGORIAS            " << endl;
-        cout << "========================================" << endl;
-        cout << "ADMINISTRADOR: " << usuarioLogueado.getNombreUsuario() << " " << usuarioLogueado.getApellidoUsuario() << endl;
-    
-        cout << "1 - Modificar una categoria existente" << endl;
-        cout << "2 - Crear una nueva categoria" << endl;
-        cout << "0 - Volver al menu principal" << endl;
-        cout << "----------------------------------------" << endl;
-        cout << "Seleccione una opcion: ";
-    
-        int opcion = 0;
-        cin >> opcion;
-    
-        if (cin.fail())
+        int opcion = Selector::elegirOpcion(
+            "Gestion de categorias - ADMINISTRADOR: " + usuarioLogueado.getNombreUsuario() + " " + usuarioLogueado.getApellidoUsuario(),
+            {
+                {1, "Modificar una categoria existente"},
+                {2, "Crear una nueva categoria"},
+                {0, "Volver al menu principal"}
+            });
+
+        if (opcion == Selector::CANCELADO)
         {
-            cin.clear();
-            cin.ignore(10000, '\n');
-            cout << "Opcion invalida." << endl;
-            system("pause");
             return;
         }
-    
+
         auto storage = crearStorageAlmacen();
-    
+
         switch (opcion)
         {
             case 1:
@@ -564,28 +587,19 @@ void GestorBaseDatos::CategoriasMod()
                     system("pause");
                     return;
                 }
-                system ("cls");
-                cout << "\n=========== CATEGORIAS ACTUALES ===========" << endl;
-                cout << "  [ID]" <<endl;
+
+                std::vector<std::pair<int, std::string>> listaCategorias;
                 for (const auto &cat : categorias)
                 {
-                    cout << "  [" << cat.id << "] " << cat.nombre << endl;
+                    listaCategorias.push_back(std::make_pair(cat.id, cat.nombre));
                 }
-                cout << "===========================================" << endl;
-    
-                int idCategoria = 0;
-                cout << "Ingrese el ID de la categoria a modificar: ";
-                cin >> idCategoria;
-    
-                if (cin.fail())
+
+                int idCategoria = Selector::elegirDeLista("Modificar categoria - Elegir cual", listaCategorias);
+                if (idCategoria == Selector::CANCELADO)
                 {
-                    cin.clear();
-                    cin.ignore(10000, '\n');
-                    cout << "ID invalido." << endl;
-                    system("pause");
-                    return;
+                    break;
                 }
-    
+
                 // Buscar la categoría por su ID
                 CategoriaORM categoriaElegida;
                 bool encontrada = false;
@@ -598,12 +612,12 @@ void GestorBaseDatos::CategoriasMod()
                         break;
                     }
                 }
-    
+
                 if (!encontrada)
                 {
                     cout << "No existe ninguna categoria con ID " << idCategoria << endl;
                     system("pause");
-                    return;
+                    break;
                 }
     
                 cout << "Nombre actual: " << categoriaElegida.nombre << endl;
@@ -701,9 +715,14 @@ void GestorBaseDatos::AltaDeUsuario(string nombreu, string apellidou, string rol
 
 void GestorBaseDatos::comprarProducto()
 {
-    /// Repone stock: elige categoria, subcategoria y producto, y guarda la compra con el ORM.
+    ClaseUsuarios userComplete = validarUsuario();
 
-
+    if(userComplete.getRolUsuario() != "ADMINISTRADOR" && userComplete.getRolUsuario() != "VENDEDOR")
+    {
+        cout << "Usted no tiene permisos para comprar:" <<endl;
+        system("pause");
+        return;
+    }
     /////bool cancelarCarga = false;
     auto storage = crearStorageAlmacen();
 
@@ -719,40 +738,28 @@ void GestorBaseDatos::comprarProducto()
         return;
     }
 
-    cout << "Categorias disponibles:" << endl;
+    std::vector<std::pair<int, std::string>> listaCategorias;
     for (auto &cat : categorias)
     {
-        cout << "  " << cat.id << " - " << cat.nombre << endl;
+        listaCategorias.push_back(std::make_pair(cat.id, cat.nombre));
     }
 
-    int idCategoria = 0;
-    cout << "Ingrese el ID de la categoria: ";
-    cin >> idCategoria;
-    if (cin.fail())
+    int idCategoria = Selector::elegirDeLista("Comprar producto - Elegir categoria", listaCategorias);
+    if (idCategoria == Selector::CANCELADO)
     {
-        cin.clear();
-        cin.ignore(10000, '\n');
-        cout << "Entrada invalida." << endl;
+        cout << "Compra cancelada." << endl;
         system("pause");
         return;
     }
 
     CategoriaORM categoriaElegida;
-    bool categoriaEncontrada = false;
     for (auto &cat : categorias)
     {
         if (cat.id == idCategoria)
         {
             categoriaElegida = cat;
-            categoriaEncontrada = true;
             break;
         }
-    }
-    if (!categoriaEncontrada)
-    {
-        cout << "No existe una categoria con ID " << idCategoria << endl;
-        system("pause");
-        return;
     }
 
     /// --- 2) Elegir la subcategoria de esa categoria ---
@@ -767,40 +774,28 @@ void GestorBaseDatos::comprarProducto()
         return;
     }
 
-    cout << endl << "Subcategorias disponibles:" << endl;
+    std::vector<std::pair<int, std::string>> listaSubcategorias;
     for (auto &sub : subcategorias)
     {
-        cout << "  " << sub.id << " - " << sub.nombre << endl;
+        listaSubcategorias.push_back(std::make_pair(sub.id, sub.nombre));
     }
 
-    int idSubcategoria = 0;
-    cout << "Ingrese el ID de la subcategoria: ";
-    cin >> idSubcategoria;
-    if (cin.fail())
+    int idSubcategoria = Selector::elegirDeLista("Comprar producto - Elegir subcategoria", listaSubcategorias);
+    if (idSubcategoria == Selector::CANCELADO)
     {
-        cin.clear();
-        cin.ignore(10000, '\n');
-        cout << "Entrada invalida." << endl;
+        cout << "Compra cancelada." << endl;
         system("pause");
         return;
     }
 
     SubcategoriaORM subcategoriaElegida;
-    bool subcategoriaEncontrada = false;
     for (auto &sub : subcategorias)
     {
         if (sub.id == idSubcategoria)
         {
             subcategoriaElegida = sub;
-            subcategoriaEncontrada = true;
             break;
         }
-    }
-    if (!subcategoriaEncontrada)
-    {
-        cout << "La subcategoria no pertenece a la categoria elegida." << endl;
-        system("pause");
-        return;
     }
 
     /// --- 3) Mostrar los productos de esa subcategoria ---
@@ -814,26 +809,24 @@ void GestorBaseDatos::comprarProducto()
         system("pause");
         return;
     }
-    system ("cls");
-    cout << endl << "Productos de la Categoria '" << categoriaElegida.nombre
-         << "' / Subcategoria '" << subcategoriaElegida.nombre << "':" << endl;
+    std::vector<std::pair<int, std::string>> listaProductos;
     for (auto &prod : productos)
     {
-        cout << "  ID " << prod.getIdProducto()
-             << " | " << prod.getNombreProducto()
-             << " | Precio: $" << prod.getPrecio()
-             << " | Stock: " << prod.getStockActual() << endl;
+        std::ostringstream texto;
+        texto << prod.getNombreProducto()
+              << " | Precio: $" << prod.getPrecio()
+              << " | Stock: " << prod.getStockActual();
+        listaProductos.push_back(std::make_pair(prod.getIdProducto(), texto.str()));
     }
 
     /// --- 4) Elegir el producto a comprar ---
-    int idProducto = 0;
-    cout << endl << "Ingrese el ID del producto que desea comprar: ";
-    cin >> idProducto;
-    if (cin.fail())
+    int idProducto = Selector::elegirDeLista(
+        "Comprar producto - " + categoriaElegida.nombre + " / " + subcategoriaElegida.nombre,
+        listaProductos);
+
+    if (idProducto == Selector::CANCELADO)
     {
-        cin.clear();
-        cin.ignore(10000, '\n');
-        cout << "Entrada invalida." << endl;
+        cout << "Compra cancelada." << endl;
         system("pause");
         return;
     }
@@ -851,134 +844,26 @@ void GestorBaseDatos::comprarProducto()
     }
     if (!productoEncontrado)
     {
-        cout << "El ID ingresado no pertenece a esa subcategoria." << endl;
+        cout << "No se encontro el producto elegido." << endl;
         system("pause");
         return;
     }
 
-    /// --- 5) Cantidad a comprar ---
+    /// --- 5) Cantidad a comprar (se descuenta automaticamente del stock) ---
     int cantidad = 0;
-    cout << "Cantidad a comprar: ";
-    cin >> cantidad;
-    if (cin.fail() || cantidad <= 0)
+    bool cantidadValida = false;
+
+    while (!cantidadValida)
     {
-        cin.clear();
-        cin.ignore(10000, '\n');
-        cout << "Cantidad invalida (debe ser mayor a cero)." << endl;
-        system("pause");
-        return;
-    }
-
-    /// --- 6) Opcion de actualizar el precio de venta ---
-    char actualizarPrecio = 'n';
-    cout << "Precio de venta actual: $" << producto.getPrecio()
-         << " - Desea actualizarlo? (s/n): ";
-    cin >> actualizarPrecio;
-
-    if (actualizarPrecio == 's' || actualizarPrecio == 'S')
-    {
-        float nuevoPrecio = 0.0;
-        cout << "Ingrese el nuevo precio de venta: ";
-        cin >> nuevoPrecio;
-        if (cin.fail() || nuevoPrecio < 0)
-        {
-            cin.clear();
-            cin.ignore(10000, '\n');
-            cout << "Precio invalido." << endl;
-            system("pause");
-            return;
-        }
-        producto.setPrecio(nuevoPrecio);
-    }
-
-    /// --- 7) Modificar las propiedades del producto y guardar con el ORM ---
-    int stockAnterior = producto.getStockActual();
-    producto.setStockActual(stockAnterior + cantidad);
-
-    try
-    {
-        storage.update(producto);
-        cout << endl << "[Compra guardada en la base de datos]" << endl;
-    }
-    catch (const std::exception &e)
-    {
-        cout << "ERROR al guardar la compra: " << e.what() << endl;
-        system("pause");
-        return;
-    }
-
-    /// --- 8) Confirmacion leyendo de nuevo la base ---
-    auto productoVerificado = storage.get<Productos>(producto.getIdProducto());
-
-    cout << endl << "=================== COMPRA REGISTRADA ===================" << endl;
-    cout << "Producto : " << productoVerificado.getNombreProducto() << endl;
-    cout << "Stock    : " << stockAnterior << " -> " << productoVerificado.getStockActual()
-         << "  (+" << cantidad << ")" << endl;
-    cout << "Precio   : $" << productoVerificado.getPrecio() << endl;
-    cout << "=========================================================" << endl;
-    system("pause");
-}
-
-void GestorBaseDatos::registrarVenta()
-{
-    /// Carga los productos de una venta (por EAN) y descuenta el stock con el ORM.
-    /// (El registro de la venta en las tablas se hara desde la clase Ventas.)
-    auto storage = crearStorageAlmacen();
-
-    cout << endl << "================= NUEVA VENTA =================" << endl;
-
-    /// --- 1) Carga de productos (por EAN, como un escaner) ---
-    struct LineaVenta
-    {
-        int idProducto;
-        string ean;
-        string nombre;
-        float precio;
-        int cantidad;
-        float subtotal;
-    };
-
-    vector<LineaVenta> lineas;
-    float total = 0.0;
-
-    while (true)
-    {
-        string ean;
-        cout << endl << "Ingrese el EAN del producto (0 para terminar la carga): ";
-        cin >> ean;
-
-        if (cin.eof())
-        {
-            cout << endl << "Se termino la entrada de datos. Venta cancelada." << endl;
-            system("pause");
-            return;
-        }
-
-        if (ean == "0")
-        {
-            break;
-        }
-
-        /// Buscar el producto por EAN con el ORM
-        auto encontrados = storage.get_all<Productos>(where(c(&Productos::getEan) == ean));
-        if (encontrados.empty())
-        {
-            cout << "No existe un producto con el EAN " << ean << endl;
-            continue;
-        }
-
-        Productos producto = encontrados.front();
-        cout << "Producto: " << producto.getNombreProducto() << endl;
-        cout << "Precio: $" << producto.getPrecio() << " | Stock: " << producto.getStockActual() << endl;
-
-        int cantidad = 0;
-        cout << "Cantidad: ";
+        cout << endl << "Stock actual: " << producto.getStockActual() << " unidades." << endl;
+        cout << "Cantidad a comprar (0 para cancelar): ";
         cin >> cantidad;
-        if (cin.fail() || cantidad <= 0)
+
+        if (cin.fail())
         {
             if (cin.eof())
             {
-                cout << endl << "Se termino la entrada de datos. Venta cancelada." << endl;
+                cout << endl << "Sin entrada. Compra cancelada." << endl;
                 system("pause");
                 return;
             }
@@ -988,103 +873,201 @@ void GestorBaseDatos::registrarVenta()
             continue;
         }
 
-        /// Si el producto ya esta en la venta, se acumula la cantidad
-        int indice = -1;
-        int cantidadYaCargada = 0;
-        for (int i = 0; i < (int)lineas.size(); i++)
+        if (cantidad == 0)
         {
-            if (lineas[i].idProducto == producto.getIdProducto())
-            {
-                indice = i;
-                cantidadYaCargada = lineas[i].cantidad;
-            }
+            cout << "Compra cancelada." << endl;
+            system("pause");
+            return;
         }
 
-        if (cantidadYaCargada + cantidad > producto.getStockActual())
+        if (cantidad < 0)
         {
-            cout << "Stock insuficiente: hay " << producto.getStockActual()
-                 << " y la venta lleva " << (cantidadYaCargada + cantidad) << endl;
+            cout << "Cantidad invalida (debe ser mayor a cero)." << endl;
             continue;
         }
 
-        if (indice >= 0)
+        if (cantidad > producto.getStockActual())
         {
-            lineas[indice].cantidad += cantidad;
-            lineas[indice].subtotal = lineas[indice].precio * lineas[indice].cantidad;
-        }
-        else
-        {
-            LineaVenta nueva;
-            nueva.idProducto = producto.getIdProducto();
-            nueva.ean = producto.getEan();
-            nueva.nombre = producto.getNombreProducto();
-            nueva.precio = producto.getPrecio();
-            nueva.cantidad = cantidad;
-            nueva.subtotal = producto.getPrecio() * cantidad;
-            lineas.push_back(nueva);
+            cout << "Stock insuficiente: quedan " << producto.getStockActual() << " unidades." << endl;
+            continue;
         }
 
-        total += producto.getPrecio() * cantidad;
-        cout << "Agregado. Total parcial: $" << total << endl;
+        cantidadValida = true;
     }
 
-    if (lineas.empty())
-    {
-        cout << "No se cargo ningun producto. Venta cancelada." << endl;
-        system("pause");
-        return;
-    }
+    /// --- 6) Descontar la cantidad del stock y guardar con el ORM ---
+    int stockAnterior = producto.getStockActual();
+    producto.setStockActual(stockAnterior - cantidad);
 
-    /// --- 2) Resumen de la venta ---
-    cout << endl << "================ RESUMEN DE LA VENTA ================" << endl;
-    for (int i = 0; i < (int)lineas.size(); i++)
-    {
-        cout << "  " << lineas[i].cantidad << " x " << lineas[i].nombre
-             << " ($" << lineas[i].precio << ") = $" << lineas[i].subtotal << endl;
-    }
-    cout << "  TOTAL: $" << total << endl;
-
-    /// --- 3) Confirmacion ---
-    char confirmar = 'n';
-    cout << "Confirmar la venta y descontar del stock? (s/n): ";
-    cin >> confirmar;
-    if (confirmar != 's' && confirmar != 'S')
-    {
-        cout << "Venta cancelada." << endl;
-        system("pause");
-        return;
-    }
-
-    /// --- 4) Descontar el stock con el ORM (todo en una transaccion) ---
     try
     {
-        storage.transaction([&]() mutable {
-            for (int i = 0; i < (int)lineas.size(); i++)
-            {
-                Productos producto = storage.get<Productos>(lineas[i].idProducto);
-                producto.setStockActual(producto.getStockActual() - lineas[i].cantidad);
-                storage.update(producto);
-            }
-            return true;
-        });
+        storage.update(producto);
+        cout << endl << "[Stock actualizado en la base de datos]" << endl;
     }
     catch (const std::exception &e)
     {
-        cout << "ERROR al descontar el stock: " << e.what() << endl;
+        cout << "ERROR al guardar el descuento: " << e.what() << endl;
         system("pause");
         return;
     }
 
-    /// --- 5) Mostrar el resultado ---
-    cout << endl << "=============== STOCK ACTUALIZADO ===============" << endl;
-    for (int i = 0; i < (int)lineas.size(); i++)
+    /// --- 7) Venta: se completan los datos (vendedor y pago) ---
+    auto productoVerificado = storage.get<Productos>(producto.getIdProducto());
+
+    cout << endl << "Stock actualizado: " << stockAnterior
+         << " -> " << productoVerificado.getStockActual()
+         << "  (-" << cantidad << ")" << endl;
+
+    Ventas venta;
+    venta.realizarVenta(productoVerificado, cantidad);
+
+    /// --- 8) Guardar la venta en la base: Ventas + Detalle_Ventas + Pagos_Venta ---
+    int idVentaGuardada = 0;
+    try
     {
-        Productos producto = storage.get<Productos>(lineas[i].idProducto);
-        cout << lineas[i].nombre << endl;
-        cout << "  Se vendieron: " << lineas[i].cantidad
-             << " | Stock ahora: " << producto.getStockActual() << endl;
+        storage.transaction([&]() mutable {
+
+            VentaORM ventaORM;
+            ventaORM.fechaHora = venta.getFechaHoraSQL();
+            ventaORM.vendedor = venta.getVendedor();
+            ventaORM.totalVenta = venta.getTotalVenta();
+            ventaORM.totalPagado = venta.getTotalPagado();
+            ventaORM.diferenciaPago = venta.getDiferenciaPago();
+            ventaORM.estadoVenta = venta.getEstadoVenta() ? "CONFIRMADA" : "ANULADA";
+            ventaORM.anuladaPor = "";
+            ventaORM.fechaHoraAnulacion = "";
+            ventaORM.motivoAnulacion = "";
+            ventaORM.observacion = "";
+
+            idVentaGuardada = storage.insert(ventaORM);
+
+            DetalleVentaORM detalle;
+            detalle.idVenta = idVentaGuardada;
+            detalle.codigoInterno = productoVerificado.getIdProducto();
+            detalle.eanLeido = productoVerificado.getEan();
+            detalle.productoSnapshot = productoVerificado.getNombreProducto();
+            detalle.precioVendido = productoVerificado.getPrecio();
+            detalle.cantidad = cantidad;
+            detalle.subtotal = productoVerificado.getPrecio() * cantidad;
+            storage.insert(detalle);
+
+            PagoVentaORM pago;
+            pago.idVenta = idVentaGuardada;
+            pago.medioPago = "EFECTIVO";
+            pago.importe = venta.getTotalPagado();
+            storage.insert(pago);
+
+            return true;
+        });
+
+        venta.setIdVenta(idVentaGuardada);
+        cout << endl << "[Venta guardada en la base de datos - N° " << idVentaGuardada << "]" << endl;
     }
-    cout << "TOTAL DE LA VENTA: $" << total << endl;
-    cout << "=================================================" << endl;
+    catch (const std::exception &e)
+    {
+        cout << "ERROR al guardar la venta en la base: " << e.what() << endl;
+    }
+
+    /// --- 9) Ticket de la venta ---
+    venta.mostrarTicket(productoVerificado, cantidad);
+
+    cout << "Recordatorio: los ajustes manuales de stock los realiza aparte" << endl;
+    cout << "un usuario con permisos (ADMINISTRADOR / LOGISTICA)." << endl;
     system("pause");
 }
+
+void GestorBaseDatos::registrarVenta()
+{
+    
+   auto snapshotVenta = crearStorageAlmacen();
+   auto datosDeVenta = snapshotVenta.get_all<VentaORM>(order_by(&VentaORM::idVenta));
+   char porsiOporno;
+
+   cout << "===== TICKET DE VENTA ======" <<endl;
+   cout << "Vendedor: " << endl;
+   cout << "Total pagado: "<< endl;
+   cout << "Diferencia de pago: "<< endl;
+   cout << "Estado de venta: " << endl;
+  /*  
+   cout << "¿Desea cancelar la venta?:" <<endl;
+ if(porsiOporno == 's'|| porsiOporno == 'S')
+ {
+       cout << "===== Datos de Anulacion ====" << endl;
+       cout << "Anulada por: "<< endl;
+       cout << "Fecha y hora de anulacion: " << endl;
+       cout << "Motivo de anulacion: " << endl;
+       cout << "Observacion: "  << endl;
+       cout << "Venta temrinada, gracias por comprar:" << endl; 
+
+ }
+ */
+    system ("pause");
+   }
+
+void GestorBaseDatos::mostrarUltimaVenta()
+{
+    /// Muestra la ultima venta guardada en la base de datos (con su detalle y pago).
+    auto storage = crearStorageAlmacen();
+
+    auto ventas = storage.get_all<VentaORM>(order_by(&VentaORM::idVenta));
+    if (ventas.empty())
+    {
+        cout << endl << "[!] No hay ventas registradas en la base de datos." << endl;
+        system("pause");
+        return;
+    }
+
+    VentaORM ultima = ventas.back();
+
+    auto detalles = storage.get_all<DetalleVentaORM>(
+        where(c(&DetalleVentaORM::idVenta) == ultima.idVenta));
+    auto pagos = storage.get_all<PagoVentaORM>(
+        where(c(&PagoVentaORM::idVenta) == ultima.idVenta));
+
+    cout << endl;
+    cout << "================= ULTIMA VENTA REGISTRADA =================" << endl;
+    cout << " Venta N° : " << ultima.idVenta << endl;
+    cout << " Fecha    : " << ultima.fechaHora << endl;
+    cout << " Vendedor : " << ultima.vendedor << endl;
+    cout << " ---------------------------------------------------------" << endl;
+
+    for (auto &det : detalles)
+    {
+        cout << " Producto : " << det.productoSnapshot << endl;
+        cout << " Cantidad : " << det.cantidad << endl;
+        cout << " Precio   : $" << det.precioVendido << endl;
+        cout << " Subtotal : $" << det.subtotal << endl;
+        cout << " ---------------------------------------------------------" << endl;
+    }
+
+    cout << " TOTAL    : $" << ultima.totalVenta << endl;
+    cout << " Pagado   : $" << ultima.totalPagado << endl;
+    if (ultima.diferenciaPago >= 0.0f)
+    {
+        cout << " Vuelto   : $" << ultima.diferenciaPago << endl;
+    }
+    else
+    {
+        cout << " Falta    : $" << -ultima.diferenciaPago << endl;
+    }
+    if (!pagos.empty())
+    {
+        cout << " Pago     : " << pagos.front().medioPago << endl;
+    }
+    cout << " Estado   : " << ultima.estadoVenta << endl;
+
+    if (ultima.estadoVenta != "CONFIRMADA")
+    {
+        cout << " ------- Datos de anulacion -------" << endl;
+        cout << " Anulada por : " << ultima.anuladaPor << endl;
+        cout << " Fecha/hora  : " << ultima.fechaHoraAnulacion << endl;
+        cout << " Motivo      : " << ultima.motivoAnulacion << endl;
+    }
+
+    cout << " Observacion : " << ultima.observacion << endl;
+    cout << "============================================================" << endl;
+
+    system("pause");
+}
+
+   

@@ -22,6 +22,8 @@ void SubcategoriasMod();
 void CategoriasMod();
 void comprarProducto();
 void registrarVenta();
+void mostrarUltimaVenta();
+int elegirCategoria(const std::string& titulo);
 void AltaDeUsuario(std::string,std::string,std::string,std::string);
 
 

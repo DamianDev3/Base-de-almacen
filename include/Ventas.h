@@ -43,8 +43,9 @@ std::string getFechaFormateada();
 std::string getHoraFormateada();
 std::string getFechaHoraSQL();
 
-void realizarVenta();
+void realizarVenta(const Productos& producto, int cantidad);
 void ventaGenerada();
+void mostrarTicket(const Productos& producto, int cantidad);
 
 private:
 int _idVenta;

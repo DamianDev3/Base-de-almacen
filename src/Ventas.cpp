@@ -2,6 +2,7 @@
 #include "../include/Productos.h"
 #include "../include/GestorBaseDatos.h"
 #include <ctime>
+#include <iostream>
 #include <string>
 using namespace std;
 
@@ -202,27 +203,91 @@ string Ventas::getFechaHoraSQL()
     return string(buffer);
 }
 
+//// VENTA DE UN PRODUCTO: pide vendedor y pago y completa los datos de la venta.
+///  (El ticket se muestra con mostrarTicket y el guardado en la base lo hace
+///  GestorBaseDatos en las tablas Ventas, Detalle_Ventas y Pagos_Venta.)
+void Ventas::realizarVenta(const Productos& producto, int cantidad)
+{
+    ingresarFechaHoraActual();
+    _totalVenta = producto.getPrecio() * cantidad;
+    _estadoVenta = true;
+    _anuladaPor = "";
+    _fechaHoraAnulacion = "";
+    _motivoAnulacion = "";
+    _observacion = "";
+
+    /// --- Vendedor ---
+    cout << endl << "Vendedor: ";
+    cin >> ws;
+    getline(cin, _vendedor);
+    if (_vendedor.empty())
+    {
+        _vendedor = "SIN_NOMBRE";
+    }
+
+    /// --- Pago del cliente ---
+    cout << "Total de la venta: $" << _totalVenta << endl;
+    float pagado = 0.0f;
+    while (true)
+    {
+        cout << "Cuanto abono el cliente? $";
+        cin >> pagado;
+        if (cin.eof())
+        {
+            // Sin entrada disponible: se toma el pago justo.
+            pagado = _totalVenta;
+            break;
+        }
+        if (!cin.fail() && pagado >= 0.0f)
+        {
+            break;
+        }
+        cin.clear();
+        cin.ignore(10000, '\n');
+        cout << "Monto invalido." << endl;
+    }
+    _totalPagado = pagado;
+    _diferenciaDePago = _totalPagado - _totalVenta;
+}
+
+//// TICKET: muestra la venta cargada (incluye el N° si ya fue guardada en la base).
+void Ventas::mostrarTicket(const Productos& producto, int cantidad)
+{
+    cout << endl;
+    cout << "=================== TICKET DE VENTA ===================" << endl;
+    if (_idVenta > 0)
+    {
+        cout << " Venta N° : " << _idVenta << endl;
+    }
+    cout << " Fecha    : " << getFechaFormateada() << "  Hora: " << getHoraFormateada() << endl;
+    cout << " Vendedor : " << _vendedor << endl;
+    cout << " -------------------------------------------------------" << endl;
+    cout << " Producto : " << producto.getNombreProducto() << endl;
+    cout << " Cantidad : " << cantidad << endl;
+    cout << " Precio   : $" << producto.getPrecio() << endl;
+    cout << " Subtotal : $" << _totalVenta << endl;
+    cout << " -------------------------------------------------------" << endl;
+    cout << " TOTAL    : $" << _totalVenta << endl;
+    cout << " Pagado   : $" << _totalPagado << endl;
+    if (_diferenciaDePago >= 0.0f)
+    {
+        cout << " Vuelto   : $" << _diferenciaDePago << endl;
+    }
+    else
+    {
+        cout << " Falta    : $" << -_diferenciaDePago << endl;
+    }
+    cout << " Estado   : " << (_estadoVenta ? "CONFIRMADA" : "ANULADA") << endl;
+    cout << " -------------------------------------------------------" << endl;
+    cout << " Stock restante: " << producto.getStockActual() << " unidades" << endl;
+    cout << "=======================================================" << endl;
+}
+
 //// TERMINAR CON VENTA, DETALLE VENTA Y PAGOS VENTA.
 
 void Ventas::ventaGenerada()
 {
-    GestorBaseDatos compra;
-    compra.comprarProducto();
-  cout << "Vendedor: " << _vendedor << endl;
-    cout << "Total pagado: " << _totalPagado << endl;
-    cout << "Diferencia de pago: " << _diferenciaDePago << endl;
-    cout << "Estado de venta: " << (_estadoVenta ? "CONFIRMADA" : "ANULADA") << endl;
-
-    if (!_estadoVenta)
-    {
-        cout << "--- Datos de Anulacion ---" << endl;
-        cout << "Anulada por: " << _anuladaPor << endl;
-        cout << "Fecha y hora de anulacion: " << _fechaHoraAnulacion << endl;
-        cout << "Motivo de anulacion: " << _motivoAnulacion << endl;
-    }
-
-    cout << "Observacion: " << _observacion << endl;
-    
-
-    
+    /// Muestra la ultima venta guardada en la base de datos.
+    GestorBaseDatos bd;
+    bd.mostrarUltimaVenta();
 }

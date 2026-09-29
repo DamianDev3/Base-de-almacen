@@ -1,5 +1,6 @@
 #include "../include/Productos.h"
 #include "../include/GestorBaseDatos.h"
+#include "../include/Selector.h"
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -148,20 +149,17 @@ int Productos::getIdSubcategoria() const {
 
 void Productos::lecturaProducto()
 {
-    int idBuscado;
     GestorBaseDatos datos;
     if(!datos.conectar("db/Almacen.db")) 
     {
         cout << "No se pudo conectar a la base de datos:" <<endl;
         return;
     }
-    cout << "ingresar el id a buscar:" <<endl;
-    cin >>idBuscado;
-     if (cin.fail())
-        {
-         cin.clear();
-         cin.ignore(10000, '\n');
-             }
-    datos.buscarCategoria(idBuscado);
+
+    int idBuscado = datos.elegirCategoria("Leer producto - Elegir categoria");
+    if (idBuscado != Selector::CANCELADO)
+    {
+        datos.buscarCategoria(idBuscado);
+    }
     datos.desconectar(); 
 }

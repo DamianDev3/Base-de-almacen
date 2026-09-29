@@ -1,5 +1,6 @@
 #include "../include/ClaseUsuarios.h"
 #include "../include/GestorBaseDatos.h"
+#include "../include/Selector.h"
 #include <iostream>
 #include <cstring>
 #include <string>
@@ -66,7 +67,6 @@ string ClaseUsuarios::getPassword() const
 }
 void ClaseUsuarios::cargaDeUsuario()
 {
-    int opcion;
     GestorBaseDatos cargaUser;
     cargaUser.conectar("db/Almacen.db"); 
     if (!cargaUser.conectar("db/Almacen.db"))
@@ -76,54 +76,44 @@ void ClaseUsuarios::cargaDeUsuario()
         return;
     }
     
-    bool carga = false;
-    while (!carga)
+    int opcion = Selector::elegirOpcion("Alta de usuario - Rol del nuevo usuario",
     {
-           cout << "Ingrese el Rol del usuario, 1- Para Administrador, 2- Para Logistica o 3- Para Vendedor:" <<endl;
-        cin >> opcion;
-             cin.ignore();
-     if (cin.fail())
-        {
-         cin.clear();
-         cin.ignore(10000, '\n');
-         opcion = -1;
-             }
+        {1, "Administrador"},
+        {2, "Logistica"},
+        {3, "Vendedor"}
+    });
 
-    if(opcion == 1)
+    if (opcion == Selector::CANCELADO)
+    {
+        cout << "Alta de usuario cancelada." << endl;
+        system("pause");
+        return;
+    }
+
+    if (opcion == 1)
     {
         _rolUsuario = "ADMINISTRADOR";
-        cout << "Usted eligio "<< " " << _rolUsuario << endl;
-    
     }
     else if (opcion == 2)
     {
         _rolUsuario = "LOGISTICA";
-        cout << "Usted eligio: "<< " " << _rolUsuario << endl;
-    }
-    else if (opcion == 3)
-    {
-        _rolUsuario = "VENDEDOR";
-        cout << "Usted eligio: "<<" " << _rolUsuario << endl;
     }
     else
     {
-        cout << "Opcion invalida:" <<endl;
-        continue;
+        _rolUsuario = "VENDEDOR";
     }
-    
+    cout << "Usted eligio: " << _rolUsuario << endl;
 
-    cout << "Ingrese nombre del usuario:" <<endl;
+    cout << "Ingrese nombre del usuario:" << endl;
     cin >> _nombreUsuario;
 
-    cout << "Ingrese el apellido del usuario:" <<endl;
+    cout << "Ingrese el apellido del usuario:" << endl;
     cin >> _apellidoUsuario;
 
-    cout << "Cree la su contraseña: " <<endl;
+    cout << "Cree la su contraseña: " << endl;
     cin >> _password;
-    cargaUser.AltaDeUsuario(_nombreUsuario,_apellidoUsuario,_rolUsuario,_password);
-    carga = true;
+    cargaUser.AltaDeUsuario(_nombreUsuario, _apellidoUsuario, _rolUsuario, _password);
     system("pause");
-    }
     
 
 }
