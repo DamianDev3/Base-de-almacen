@@ -6,12 +6,14 @@ public:
     /// Constructores:
     ClaseUsuarios();
     ClaseUsuarios(int id, const std::string& nombre, const std::string& rol, const std::string& password); 
+    ////SETTERS
     void setIdUsuario(int);
     void setNombreUsuario(std::string);
     void setApellidoUsuario(std::string);
     void setRolUsuario(std::string);
     void setPassword(std::string);
 
+    ////GETTERS
     int getIdUsuario() const;
     std::string getNombreUsuario() const;
     std::string getApellidoUsuario() const;

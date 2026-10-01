@@ -28,9 +28,10 @@ void Menus::Menugeneral()
         {2, "Mostrar Almacen"},
         {3, "Leer producto"},
         {4, "Comprar producto"},
-        {5, "Ventas"},
-        {6, "Modificar categorias"},
-        {7, "Ultima venta realizada"},
+        {5, "Modificar categorias"},
+        {6, "Ultima venta realizada"},
+        {7, "Ultimo detalle de venta"},
+        {8, "Ultimo pago de venta"},
         {0, "Salir del programa"}
     };
 
@@ -60,13 +61,16 @@ void Menus::Menugeneral()
             bd.comprarProducto();
             break;
         case 5:
-            bd.registrarVenta();
-            break;
-        case 6:
             bd.CategoriasMod();
             break;
+        case 6:
+            bd.mostrarUltimaVenta();
+            break;
         case 7:
-            venta.ventaGenerada();
+            bd.mostrarUltimoDetalle();
+            break;
+        case 8:
+            bd.mostrarUltimoPago();
             break;
         case 0:
             cout << "SALIENDO DEL PROGRAMA:" << endl;

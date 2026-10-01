@@ -7,9 +7,9 @@
 class Productos {
 public:
     Productos();
-    Productos(int,std::string, std::string, std::string, std::string, std::string, int, float, int, int, int, int, int);
+    Productos(int,std::string, std::string, std::string, std::string, std::string, int, double, int, int, int, int, int);
 
-    /// SETTERS
+    ////SETTERS
     void setIdProducto(int);
     void setEan(std::string);
     void setNombreProducto(std::string);
@@ -17,14 +17,14 @@ public:
     void setVariantes(std::string);
     void setContenido(std::string);
     void setUnidades(int);
-    void setPrecio(float);
+    void setPrecio(double);
     void setStockMinimo(int);
     void setStockObjetivo(int);
     void setStockActual(int);
     void setIdCategoria(int);
     void setIdSubcategoria(int);
 
-    /// GETTERS
+    ////GETTERS
     int getIdProducto() const;
     std::string getEan() const;
     std::string getNombreProducto() const;
@@ -32,7 +32,7 @@ public:
     std::string getVariantes() const;
     std::string getContenido() const;
     int getUnidades() const;
-    float getPrecio() const;
+    double getPrecio() const;
     int getStockMinimo() const;
     int getStockObjetivo() const;
     int getStockActual() const;
@@ -49,7 +49,7 @@ private:
     std::string _variantes;
     std::string _contenido;
     int _unidades;
-    float _precioVenta;
+    double _precioVenta;
     int _stockMinimo;
     int _stockObjetivo;
     int _stockActual;

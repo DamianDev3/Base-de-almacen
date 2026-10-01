@@ -1,10 +1,21 @@
 #include "Ventas.h"
 #include "../include/Productos.h"
 #include "../include/GestorBaseDatos.h"
+#include "../include/Formato.h"
+#include <cmath>
 #include <ctime>
 #include <iostream>
 #include <string>
 using namespace std;
+
+namespace
+{
+    /// Redondea un importe a 2 decimales (centavos).
+    double redondearCentavos(double importe)
+    {
+        return std::round(importe * 100.0) / 100.0;
+    }
+}
 
 Ventas::Ventas()
 {
@@ -21,7 +32,7 @@ Ventas::Ventas()
     _observacion = "";
 }
 
-Ventas::Ventas(int idVenta, int fecha, float totalVenta, float totalPagado, float diferenciaDePago, bool estadoVenta)
+Ventas::Ventas(int idVenta, int fecha, double totalVenta, double totalPagado, double diferenciaDePago, bool estadoVenta)
 {
     _idVenta = idVenta;
     _fecha = fecha;
@@ -56,17 +67,17 @@ void Ventas::setVendedor(string vendedor)
     _vendedor = vendedor;
 }
 
-void Ventas::setTotalVenta(float totalVenta)
+void Ventas::setTotalVenta(double totalVenta)
 {
     _totalVenta = totalVenta;
 }
 
-void Ventas::setTotalPagado(float totalPagado)
+void Ventas::setTotalPagado(double totalPagado)
 {
     _totalPagado = totalPagado;
 }
 
-void Ventas::setDiferenciaPago(float diferenciaPago)
+void Ventas::setDiferenciaPago(double diferenciaPago)
 {
     _diferenciaDePago = diferenciaPago;
 }
@@ -112,17 +123,17 @@ string Ventas::getVendedor()
     return _vendedor;
 }
 
-float Ventas::getTotalVenta()
+double Ventas::getTotalVenta()
 {
     return _totalVenta;
 }
 
-float Ventas::getTotalPagado()
+double Ventas::getTotalPagado()
 {
     return _totalPagado;
 }
 
-float Ventas::getDiferenciaPago()
+double Ventas::getDiferenciaPago()
 {
     return _diferenciaDePago;
 }
@@ -209,7 +220,7 @@ string Ventas::getFechaHoraSQL()
 void Ventas::realizarVenta(const Productos& producto, int cantidad)
 {
     ingresarFechaHoraActual();
-    _totalVenta = producto.getPrecio() * cantidad;
+    _totalVenta = redondearCentavos(producto.getPrecio() * cantidad);
     _estadoVenta = true;
     _anuladaPor = "";
     _fechaHoraAnulacion = "";
@@ -226,8 +237,8 @@ void Ventas::realizarVenta(const Productos& producto, int cantidad)
     }
 
     /// --- Pago del cliente ---
-    cout << "Total de la venta: $" << _totalVenta << endl;
-    float pagado = 0.0f;
+    cout << "Total de la venta: $" << dinero(_totalVenta) << endl;
+    double pagado = 0.0;
     while (true)
     {
         cout << "Cuanto abono el cliente? $";
@@ -238,7 +249,7 @@ void Ventas::realizarVenta(const Productos& producto, int cantidad)
             pagado = _totalVenta;
             break;
         }
-        if (!cin.fail() && pagado >= 0.0f)
+        if (!cin.fail() && pagado >= 0.0)
         {
             break;
         }
@@ -246,8 +257,43 @@ void Ventas::realizarVenta(const Productos& producto, int cantidad)
         cin.ignore(10000, '\n');
         cout << "Monto invalido." << endl;
     }
-    _totalPagado = pagado;
-    _diferenciaDePago = _totalPagado - _totalVenta;
+    _totalPagado = redondearCentavos(pagado);
+    _diferenciaDePago = redondearCentavos(_totalPagado - _totalVenta);
+}
+
+//// ANULAR: marca la venta como anulada y pide los datos de la anulacion.
+///  (La fecha y hora se toman en el momento de anular; el "anulada por" lo
+///  informa el sistema con el usuario que tiene la sesion abierta.)
+void Ventas::anular(const std::string& usuario)
+{
+    _estadoVenta = false;
+    _anuladaPor = usuario;
+
+    // Fecha y hora del momento de la anulacion.
+    time_t ahora = time(nullptr);
+    tm* fechaLocal = localtime(&ahora);
+    if (fechaLocal != nullptr)
+    {
+        char buffer[20];  // "aaaa-mm-dd hh:mm:ss" + fin de cadena
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", fechaLocal);
+        _fechaHoraAnulacion = string(buffer);
+    }
+    else
+    {
+        _fechaHoraAnulacion = "";
+    }
+
+    cout << "Motivo de anulacion: ";
+    cin >> ws;
+    getline(cin, _motivoAnulacion);
+    if (_motivoAnulacion.empty())
+    {
+        _motivoAnulacion = "SIN_MOTIVO";
+    }
+
+    cout << "Observacion: ";
+    cin >> ws;
+    getline(cin, _observacion);
 }
 
 //// TICKET: muestra la venta cargada (incluye el N° si ya fue guardada en la base).
@@ -264,20 +310,28 @@ void Ventas::mostrarTicket(const Productos& producto, int cantidad)
     cout << " -------------------------------------------------------" << endl;
     cout << " Producto : " << producto.getNombreProducto() << endl;
     cout << " Cantidad : " << cantidad << endl;
-    cout << " Precio   : $" << producto.getPrecio() << endl;
-    cout << " Subtotal : $" << _totalVenta << endl;
+    cout << " Precio   : $" << dinero(producto.getPrecio()) << endl;
+    cout << " Subtotal : $" << dinero(_totalVenta) << endl;
     cout << " -------------------------------------------------------" << endl;
-    cout << " TOTAL    : $" << _totalVenta << endl;
-    cout << " Pagado   : $" << _totalPagado << endl;
-    if (_diferenciaDePago >= 0.0f)
+    cout << " TOTAL    : $" << dinero(_totalVenta) << endl;
+    cout << " Pagado   : $" << dinero(_totalPagado) << endl;
+    if (_diferenciaDePago >= 0.0)
     {
-        cout << " Vuelto   : $" << _diferenciaDePago << endl;
+        cout << " Vuelto   : $" << dinero(_diferenciaDePago) << endl;
     }
     else
     {
-        cout << " Falta    : $" << -_diferenciaDePago << endl;
+        cout << " Falta    : $" << dinero(-_diferenciaDePago) << endl;
     }
     cout << " Estado   : " << (_estadoVenta ? "CONFIRMADA" : "ANULADA") << endl;
+    if (!_estadoVenta)
+    {
+        cout << " ------- Datos de anulacion -------" << endl;
+        cout << " Anulada por  : " << _anuladaPor << endl;
+        cout << " Fecha y hora : " << _fechaHoraAnulacion << endl;
+        cout << " Motivo       : " << _motivoAnulacion << endl;
+        cout << " Observacion  : " << _observacion << endl;
+    }
     cout << " -------------------------------------------------------" << endl;
     cout << " Stock restante: " << producto.getStockActual() << " unidades" << endl;
     cout << "=======================================================" << endl;

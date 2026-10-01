@@ -4,7 +4,11 @@
 #include "../include/Categorias.h"
 #include "../include/ClaseUsuarios.h"
 #include "../include/Ventas.h"
+#include "../include/DetalleVenta.h"
+#include "../include/PagosVenta.h"
 #include "../include/Selector.h"
+#include "../include/Formato.h"
+#include <cmath>
 #include <iostream>
 #include <sstream>
 #include <utility>
@@ -36,34 +40,14 @@ namespace
         int idVenta = 0;
         string fechaHora;
         string vendedor;
-        float totalVenta = 0;
-        float totalPagado = 0;
-        float diferenciaPago = 0;
+        double totalVenta = 0;
+        double totalPagado = 0;
+        double diferenciaPago = 0;
         string estadoVenta;
         string anuladaPor;
         string fechaHoraAnulacion;
         string motivoAnulacion;
         string observacion;
-    };
-
-    struct DetalleVentaORM
-    {
-        int idDetalle = 0;
-        int idVenta = 0;
-        int codigoInterno = 0;
-        string eanLeido;
-        string productoSnapshot;
-        float precioVendido = 0;
-        int cantidad = 0;
-        float subtotal = 0;
-    };
-
-    struct PagoVentaORM
-    {
-        int idPago = 0;
-        int idVenta = 0;
-        string medioPago;
-        float importe = 0;
     };
 
     auto crearStorageAlmacen()
@@ -108,19 +92,19 @@ namespace
                 make_column("motivo_anulacion", &VentaORM::motivoAnulacion),
                 make_column("observacion", &VentaORM::observacion)),
             make_table("Detalle_Ventas",
-                make_column("id_detalle", &DetalleVentaORM::idDetalle, primary_key(), autoincrement()),
-                make_column("id_venta", &DetalleVentaORM::idVenta),
-                make_column("codigo_interno", &DetalleVentaORM::codigoInterno),
-                make_column("ean_leido", &DetalleVentaORM::eanLeido),
-                make_column("producto_snapshot", &DetalleVentaORM::productoSnapshot),
-                make_column("precio_vendido", &DetalleVentaORM::precioVendido),
-                make_column("cantidad", &DetalleVentaORM::cantidad),
-                make_column("subtotal", &DetalleVentaORM::subtotal)),
+                make_column("id_detalle", &DetalleVenta::getIdDetalle, &DetalleVenta::setIdDetalle, primary_key(), autoincrement()),
+                make_column("id_venta", &DetalleVenta::getIdVenta, &DetalleVenta::setIdVenta),
+                make_column("codigo_interno", &DetalleVenta::getCodigoInterno, &DetalleVenta::setCodigoInterno),
+                make_column("ean_detectado", &DetalleVenta::getEanD, &DetalleVenta::setEanD),
+                make_column("producto", &DetalleVenta::getProductoSnapshot, &DetalleVenta::setProductoSnapshot),
+                make_column("precio", &DetalleVenta::getPrecio, &DetalleVenta::setPrecio),
+                make_column("cantidad", &DetalleVenta::getCantidadP, &DetalleVenta::setCantidadP),
+                make_column("subtotal", &DetalleVenta::getSubTotal, &DetalleVenta::setSubTotal)),
             make_table("Pagos_Venta",
-                make_column("id_pago", &PagoVentaORM::idPago, primary_key(), autoincrement()),
-                make_column("id_venta", &PagoVentaORM::idVenta),
-                make_column("medio_pago", &PagoVentaORM::medioPago),
-                make_column("importe", &PagoVentaORM::importe)));
+                make_column("id_pago", &PagosVenta::getIdPago, &PagosVenta::setIdPago, primary_key(), autoincrement()),
+                make_column("id_venta", &PagosVenta::getIdVTA, &PagosVenta::setIdVTA),
+                make_column("medio_pago", &PagosVenta::getMediodePago, &PagosVenta::setMediodePago),
+                make_column("importe", &PagosVenta::getSubtotal, &PagosVenta::setSubtotal)));
     }
 }
 
@@ -199,7 +183,7 @@ void GestorBaseDatos::AlmacenInventario()
                  << " | " << get<1>(fila)
                  << " | Categoria: " << get<2>(fila)
                  << " | Subcategoria: " << get<3>(fila)
-                 << " | $" << get<4>(fila)
+                 << " | $" << dinero(get<4>(fila))
                  << " | Stock min: " << get<5>(fila)
                  << " | Stock obj: " << get<6>(fila) << endl;
         }
@@ -263,7 +247,7 @@ bool GestorBaseDatos::buscarPorProducto(const char* eanBuscado)
         cout << endl << "----------------------------------------" << endl;
         cout << "Producto : " << prod.getNombreProducto() << endl;
         cout << "Marca    : " << prod.getMarcaProducto() << endl;
-        cout << "Precio   : $" << prod.getPrecio() << endl;
+        cout << "Precio   : $" << dinero(prod.getPrecio()) << endl;
         cout << "Stock    : " << prod.getStockActual() << endl;
         cout << "----------------------------------------" << endl;
     }
@@ -291,7 +275,7 @@ void GestorBaseDatos::mostrarBD(int limite)
     for (auto &prod : productos)
     {
         cout << " [" << prod.getEan() << "] " << prod.getNombreProducto()
-             << " | $" << prod.getPrecio()
+             << " | $" << dinero(prod.getPrecio())
              << " | Stock: " << prod.getStockActual() << endl;
     }
 
@@ -344,7 +328,7 @@ void GestorBaseDatos::buscarCategoria(int idBuscadocat)
         {
             cout << "     * [" << prod.getEan() << "] "
                  << prod.getNombreProducto()
-                 << " | $" << prod.getPrecio()
+                 << " | $" << dinero(prod.getPrecio())
                  << " | Stock: " << prod.getStockActual() << endl;
         }
     }
@@ -814,7 +798,7 @@ void GestorBaseDatos::comprarProducto()
     {
         std::ostringstream texto;
         texto << prod.getNombreProducto()
-              << " | Precio: $" << prod.getPrecio()
+              << " | Precio: $" << dinero(prod.getPrecio())
               << " | Stock: " << prod.getStockActual();
         listaProductos.push_back(std::make_pair(prod.getIdProducto(), texto.str()));
     }
@@ -921,7 +905,28 @@ void GestorBaseDatos::comprarProducto()
     Ventas venta;
     venta.realizarVenta(productoVerificado, cantidad);
 
-    /// --- 8) Guardar la venta en la base: Ventas + Detalle_Ventas + Pagos_Venta ---
+    /// --- 8) Opcion de anular la venta (solo la puede hacer un ADMINISTRADOR) ---
+    if (userComplete.getRolUsuario() == "ADMINISTRADOR")
+    {
+        if (Selector::confirmar("¿Desea anular la venta?"))
+        {
+            venta.anular(userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario());
+        }
+    }
+    else
+    {
+        cout << endl;
+        cout << "=======================================================" << endl;
+        cout << " Usted no tiene el rol para anular la venta." << endl;
+        cout << " (Solo un ADMINISTRADOR puede anularla)" << endl;
+        cout << "=======================================================" << endl;
+    }
+
+    /// --- 9) Se arma el detalle de la venta (producto + cantidad) ---
+    DetalleVenta detalleVenta;
+    detalleVenta.generarDetalleVTA(productoVerificado, cantidad);
+
+    /// --- 10) Guardar la venta en la base: Ventas + Detalle_Ventas + Pagos_Venta ---
     int idVentaGuardada = 0;
     try
     {
@@ -934,33 +939,25 @@ void GestorBaseDatos::comprarProducto()
             ventaORM.totalPagado = venta.getTotalPagado();
             ventaORM.diferenciaPago = venta.getDiferenciaPago();
             ventaORM.estadoVenta = venta.getEstadoVenta() ? "CONFIRMADA" : "ANULADA";
-            ventaORM.anuladaPor = "";
-            ventaORM.fechaHoraAnulacion = "";
-            ventaORM.motivoAnulacion = "";
-            ventaORM.observacion = "";
+            ventaORM.anuladaPor = venta.getAnuladaPor();
+            ventaORM.fechaHoraAnulacion = venta.getFechaHoraAnulacion();
+            ventaORM.motivoAnulacion = venta.getMotivoAnulacion();
+            ventaORM.observacion = venta.getObservacion();
 
             idVentaGuardada = storage.insert(ventaORM);
 
-            DetalleVentaORM detalle;
-            detalle.idVenta = idVentaGuardada;
-            detalle.codigoInterno = productoVerificado.getIdProducto();
-            detalle.eanLeido = productoVerificado.getEan();
-            detalle.productoSnapshot = productoVerificado.getNombreProducto();
-            detalle.precioVendido = productoVerificado.getPrecio();
-            detalle.cantidad = cantidad;
-            detalle.subtotal = productoVerificado.getPrecio() * cantidad;
-            storage.insert(detalle);
+            detalleVenta.setIdVenta(idVentaGuardada);
+            storage.insert(detalleVenta);
 
-            PagoVentaORM pago;
-            pago.idVenta = idVentaGuardada;
-            pago.medioPago = "EFECTIVO";
-            pago.importe = venta.getTotalPagado();
+            venta.setIdVenta(idVentaGuardada);
+
+            PagosVenta pago;
+            pago.generarPagodeVenta(venta);
             storage.insert(pago);
 
             return true;
         });
 
-        venta.setIdVenta(idVentaGuardada);
         cout << endl << "[Venta guardada en la base de datos - N° " << idVentaGuardada << "]" << endl;
     }
     catch (const std::exception &e)
@@ -968,41 +965,29 @@ void GestorBaseDatos::comprarProducto()
         cout << "ERROR al guardar la venta en la base: " << e.what() << endl;
     }
 
-    /// --- 9) Ticket de la venta ---
+    /// --- 11) Si la venta quedo anulada, se devuelve el stock descontado ---
+    if (!venta.getEstadoVenta())
+    {
+        try
+        {
+            productoVerificado.setStockActual(productoVerificado.getStockActual() + cantidad);
+            storage.update(productoVerificado);
+            cout << endl << "[Venta anulada: se devolvio el stock - Stock actual: "
+                 << productoVerificado.getStockActual() << "]" << endl;
+        }
+        catch (const std::exception &e)
+        {
+            cout << "ERROR al devolver el stock: " << e.what() << endl;
+        }
+    }
+
+    /// --- 12) Ticket de la venta ---
     venta.mostrarTicket(productoVerificado, cantidad);
 
     cout << "Recordatorio: los ajustes manuales de stock los realiza aparte" << endl;
     cout << "un usuario con permisos (ADMINISTRADOR / LOGISTICA)." << endl;
     system("pause");
 }
-
-void GestorBaseDatos::registrarVenta()
-{
-    
-   auto snapshotVenta = crearStorageAlmacen();
-   auto datosDeVenta = snapshotVenta.get_all<VentaORM>(order_by(&VentaORM::idVenta));
-   char porsiOporno;
-
-   cout << "===== TICKET DE VENTA ======" <<endl;
-   cout << "Vendedor: " << endl;
-   cout << "Total pagado: "<< endl;
-   cout << "Diferencia de pago: "<< endl;
-   cout << "Estado de venta: " << endl;
-  /*  
-   cout << "¿Desea cancelar la venta?:" <<endl;
- if(porsiOporno == 's'|| porsiOporno == 'S')
- {
-       cout << "===== Datos de Anulacion ====" << endl;
-       cout << "Anulada por: "<< endl;
-       cout << "Fecha y hora de anulacion: " << endl;
-       cout << "Motivo de anulacion: " << endl;
-       cout << "Observacion: "  << endl;
-       cout << "Venta temrinada, gracias por comprar:" << endl; 
-
- }
- */
-    system ("pause");
-   }
 
 void GestorBaseDatos::mostrarUltimaVenta()
 {
@@ -1019,10 +1004,10 @@ void GestorBaseDatos::mostrarUltimaVenta()
 
     VentaORM ultima = ventas.back();
 
-    auto detalles = storage.get_all<DetalleVentaORM>(
-        where(c(&DetalleVentaORM::idVenta) == ultima.idVenta));
-    auto pagos = storage.get_all<PagoVentaORM>(
-        where(c(&PagoVentaORM::idVenta) == ultima.idVenta));
+    auto detalles = storage.get_all<DetalleVenta>(
+        where(c(&DetalleVenta::getIdVenta) == ultima.idVenta));
+    auto pagos = storage.get_all<PagosVenta>(
+        where(c(&PagosVenta::getIdVTA) == ultima.idVenta));
 
     cout << endl;
     cout << "================= ULTIMA VENTA REGISTRADA =================" << endl;
@@ -1033,26 +1018,26 @@ void GestorBaseDatos::mostrarUltimaVenta()
 
     for (auto &det : detalles)
     {
-        cout << " Producto : " << det.productoSnapshot << endl;
-        cout << " Cantidad : " << det.cantidad << endl;
-        cout << " Precio   : $" << det.precioVendido << endl;
-        cout << " Subtotal : $" << det.subtotal << endl;
+        cout << " Producto : " << det.getProductoSnapshot() << endl;
+        cout << " Cantidad : " << det.getCantidadP() << endl;
+        cout << " Precio   : $" << dinero(det.getPrecio()) << endl;
+        cout << " Subtotal : $" << dinero(det.getSubTotal()) << endl;
         cout << " ---------------------------------------------------------" << endl;
     }
 
-    cout << " TOTAL    : $" << ultima.totalVenta << endl;
-    cout << " Pagado   : $" << ultima.totalPagado << endl;
-    if (ultima.diferenciaPago >= 0.0f)
+    cout << " TOTAL    : $" << dinero(ultima.totalVenta) << endl;
+    cout << " Pagado   : $" << dinero(ultima.totalPagado) << endl;
+    if (ultima.diferenciaPago >= 0.0)
     {
-        cout << " Vuelto   : $" << ultima.diferenciaPago << endl;
+        cout << " Vuelto   : $" << dinero(ultima.diferenciaPago) << endl;
     }
     else
     {
-        cout << " Falta    : $" << -ultima.diferenciaPago << endl;
+        cout << " Falta    : $" << dinero(-ultima.diferenciaPago) << endl;
     }
     if (!pagos.empty())
     {
-        cout << " Pago     : " << pagos.front().medioPago << endl;
+        cout << " Pago     : " << pagos.front().getMediodePago() << endl;
     }
     cout << " Estado   : " << ultima.estadoVenta << endl;
 
@@ -1065,6 +1050,60 @@ void GestorBaseDatos::mostrarUltimaVenta()
     }
 
     cout << " Observacion : " << ultima.observacion << endl;
+    cout << "============================================================" << endl;
+
+    system("pause");
+}
+
+void GestorBaseDatos::mostrarUltimoDetalle()
+{
+    /// Muestra el ultimo detalle de venta registrado (aparte de la venta).
+    auto storage = crearStorageAlmacen();
+
+    auto detalles = storage.get_all<DetalleVenta>(order_by(&DetalleVenta::getIdDetalle));
+    if (detalles.empty())
+    {
+        cout << endl << "[!] No hay detalles de venta registrados en la base de datos." << endl;
+        system("pause");
+        return;
+    }
+
+    DetalleVenta ultimo = detalles.back();
+
+    cout << endl;
+    cout << "================= ULTIMO DETALLE DE VENTA =================" << endl;
+    cout << " Detalle N° : " << ultimo.getIdDetalle() << endl;
+    cout << " Venta N°   : " << ultimo.getIdVenta() << endl;
+    cout << " ---------------------------------------------------------" << endl;
+    cout << " Codigo interno : " << ultimo.getCodigoInterno() << endl;
+    cout << " EAN            : " << ultimo.getEanD() << endl;
+    cout << " Producto       : " << ultimo.getProductoSnapshot() << endl;
+    cout << " Cantidad       : " << ultimo.getCantidadP() << endl;
+    cout << " Precio         : $" << dinero(ultimo.getPrecio()) << endl;
+    cout << " Subtotal       : $" << dinero(ultimo.getSubTotal()) << endl;
+    cout << "============================================================" << endl;
+
+    system("pause");
+}
+
+void GestorBaseDatos::mostrarUltimoPago()
+{
+    /// Muestra el ultimo pago de venta registrado.
+    auto storage = crearStorageAlmacen();
+
+    auto pagos = storage.get_all<PagosVenta>(order_by(&PagosVenta::getIdPago));
+    if (pagos.empty())
+    {
+        cout << endl << "[!] No hay pagos de venta registrados en la base de datos." << endl;
+        system("pause");
+        return;
+    }
+
+    PagosVenta ultimo = pagos.back();
+
+    cout << endl;
+    cout << "=================== ULTIMO PAGO DE VENTA ===================" << endl;
+    ultimo.pagoVTAgenerado();
     cout << "============================================================" << endl;
 
     system("pause");

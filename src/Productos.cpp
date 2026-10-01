@@ -22,7 +22,7 @@ Productos::Productos()
     _idSubcategoria = 0;
 }
 
-Productos::Productos(int idProducto,string eanProducto,string Nombreproducto,string marcaProducto,string variantes,string contenido,int unidades,float precioVenta,int stockActual,int stockMinimo,int stockObjetivo,int idCategoria,int idSubcategoria)
+Productos::Productos(int idProducto,string eanProducto,string Nombreproducto,string marcaProducto,string variantes,string contenido,int unidades,double precioVenta,int stockActual,int stockMinimo,int stockObjetivo,int idCategoria,int idSubcategoria)
 {
     _idProducto = idProducto;
     _eanProductos = eanProducto;
@@ -69,7 +69,7 @@ void Productos::setUnidades(int unidades) {
     _unidades = unidades;
 }
 
-void Productos::setPrecio(float precio) {
+void Productos::setPrecio(double precio) {
     _precioVenta = precio;
 }
 
@@ -123,7 +123,7 @@ int Productos::getUnidades() const {
     return _unidades;
 }
 
-float Productos::getPrecio() const {
+double Productos::getPrecio() const {
     return _precioVenta;
 }
 

@@ -4,19 +4,21 @@
 using namespace std;
 class Categorias 
 {
-    private:
-    int _idCategoria;
-    std::string _nombreCategoria;
-    bool _estadoCategoria;
-
     public:
     Categorias();
     Categorias(int, std::string, bool);
+    ////GETTERS
     int getIdCategoria();
     std::string getNombreCategoria();
     bool getEstadoCategoria();
+    ////SETTERS
     void setIdCategoria(int);
     void setNombreCategoria(std::string);
     void setEstadoCategoria(bool);
     void listaCategorias();
+
+    private:
+    int _idCategoria;
+    std::string _nombreCategoria;
+    bool _estadoCategoria;
 };

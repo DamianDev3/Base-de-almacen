@@ -23,6 +23,8 @@ void CategoriasMod();
 void comprarProducto();
 void registrarVenta();
 void mostrarUltimaVenta();
+void mostrarUltimoDetalle();
+void mostrarUltimoPago();
 int elegirCategoria(const std::string& titulo);
 void AltaDeUsuario(std::string,std::string,std::string,std::string);
 

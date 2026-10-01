@@ -9,28 +9,28 @@ public:
 ///// CONSTRUCTOR
 
 Ventas();
-Ventas(int,int,float,float,float,bool);
+Ventas(int,int,double,double,double,bool);
 ~Ventas();
-////// SETTERS
+////SETTERS
 void setIdVenta(int);
 void setFechaVenta(int);
 void setVendedor(std::string);
-void setTotalVenta(float);
-void setTotalPagado(float);
-void setDiferenciaPago(float);
+void setTotalVenta(double);
+void setTotalPagado(double);
+void setDiferenciaPago(double);
 void setEstadoVenta(bool);
 void setAnuladaPor(std::string);
 void setFechaHoraAnulacion(std::string);
 void setMotivoAnulacion(std::string);
 void setObservacion(std::string);
 
-/////GETTERS
+////GETTERS
 int getIdVenta();
 int getFecha();
 std::string getVendedor();
-float getTotalVenta();
-float getTotalPagado();
-float getDiferenciaPago();
+double getTotalVenta();
+double getTotalPagado();
+double getDiferenciaPago();
 bool getEstadoVenta();
 std::string getAnuladaPor();
 std::string getFechaHoraAnulacion();
@@ -44,6 +44,7 @@ std::string getHoraFormateada();
 std::string getFechaHoraSQL();
 
 void realizarVenta(const Productos& producto, int cantidad);
+void anular(const std::string& usuario);
 void ventaGenerada();
 void mostrarTicket(const Productos& producto, int cantidad);
 
@@ -51,9 +52,9 @@ private:
 int _idVenta;
 int _fecha;
 std::string _vendedor;
-float _totalVenta;
-float _totalPagado;
-float _diferenciaDePago;
+double _totalVenta;
+double _totalPagado;
+double _diferenciaDePago;
 bool _estadoVenta;
 std::string _anuladaPor;
 std::string _fechaHoraAnulacion;
