@@ -70,7 +70,10 @@ double PagosVenta::getSubtotal() const
 void PagosVenta::generarPagodeVenta(Ventas & ventaGenerada)
 {
     _idVentaGenerada = ventaGenerada.getIdVenta();
-    _medioPago = "EFECTIVO";
+    if (_medioPago.empty())
+    {
+        _medioPago = "EFECTIVO";
+    }
     _subtotalVTA = ventaGenerada.getTotalPagado();
 
     cout << "Pago de Venta:" << endl;

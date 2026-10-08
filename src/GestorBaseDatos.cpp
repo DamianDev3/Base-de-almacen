@@ -6,6 +6,7 @@
 #include "../include/Ventas.h"
 #include "../include/DetalleVenta.h"
 #include "../include/PagosVenta.h"
+#include "../include/ListasDeSistema.h"
 #include "../include/Selector.h"
 #include "../include/Formato.h"
 #include <cmath>
@@ -22,6 +23,33 @@ using namespace sqlite_orm;
 /// Todas las funciones del gestor trabajan con este storage.
 namespace
 {
+    /// Separa una lista del sistema ("A, B, C") en valores sueltos.
+    vector<string> separarLista(const string& valores)
+    {
+        vector<string> resultado;
+        string actual = "";
+
+        for (size_t i = 0; i <= valores.size(); i++)
+        {
+            if (i == valores.size() || valores[i] == ',')
+            {
+                size_t inicio = actual.find_first_not_of(" \t");
+                if (inicio != string::npos)
+                {
+                    size_t fin = actual.find_last_not_of(" \t");
+                    resultado.push_back(actual.substr(inicio, fin - inicio + 1));
+                }
+                actual = "";
+            }
+            else
+            {
+                actual += valores[i];
+            }
+        }
+
+        return resultado;
+    }
+
     struct CategoriaORM
     {
         int id;
@@ -44,6 +72,7 @@ namespace
         double totalPagado = 0;
         double diferenciaPago = 0;
         string estadoVenta;
+        string tipoMovimiento;
         string anuladaPor;
         string fechaHoraAnulacion;
         string motivoAnulacion;
@@ -87,6 +116,7 @@ namespace
                 make_column("total_pagado", &VentaORM::totalPagado),
                 make_column("diferencia_pago", &VentaORM::diferenciaPago),
                 make_column("estado_venta", &VentaORM::estadoVenta),
+                make_column("tipo_movimiento", &VentaORM::tipoMovimiento),
                 make_column("anulada_por", &VentaORM::anuladaPor),
                 make_column("fecha_hora_anulacion", &VentaORM::fechaHoraAnulacion),
                 make_column("motivo_anulacion", &VentaORM::motivoAnulacion),
@@ -104,7 +134,17 @@ namespace
                 make_column("id_pago", &PagosVenta::getIdPago, &PagosVenta::setIdPago, primary_key(), autoincrement()),
                 make_column("id_venta", &PagosVenta::getIdVTA, &PagosVenta::setIdVTA),
                 make_column("medio_pago", &PagosVenta::getMediodePago, &PagosVenta::setMediodePago),
-                make_column("importe", &PagosVenta::getSubtotal, &PagosVenta::setSubtotal)));
+                make_column("importe", &PagosVenta::getSubtotal, &PagosVenta::setSubtotal)),
+            make_table("lista_sistema",
+                make_column("rol_del_sistema", &ListasDeSistema::getRolsistema, &ListasDeSistema::setRoldeSistema),
+                make_column("revision_precio", &ListasDeSistema::getRevisionPrecio, &ListasDeSistema::setRevicionPrecio),
+                make_column("estado_compra", &ListasDeSistema::getEstadoCompra, &ListasDeSistema::setEstadoCompra),
+                make_column("direccion_stock", &ListasDeSistema::getDireccionstock, &ListasDeSistema::setDirecionstock),
+                make_column("tipo_movimiento", &ListasDeSistema::getTipoMovimiento, &ListasDeSistema::settipoMovimiento),
+                make_column("motivo_correccion", &ListasDeSistema::getmotivoCorreccion, &ListasDeSistema::setmotivoCorreccion),
+                make_column("medio_de_pago", &ListasDeSistema::getMediodePago, &ListasDeSistema::setMediodePago),
+                make_column("estado_de_venta", &ListasDeSistema::getEstadoVenta, &ListasDeSistema::setEstadodeVenta),
+                make_column("unidad_de_medicion", &ListasDeSistema::getUnidadMedicon, &ListasDeSistema::setUnidadMedicion)));
     }
 }
 
@@ -392,6 +432,7 @@ ClaseUsuarios GestorBaseDatos::validarUsuario()
         cin >> apellidoUser;
         cout << "Contraseña: ";
         cin >> contraseniaUser;
+        cout << "" <<endl;
         cin.ignore(10000, '\n');
         
         auto rolUsuario = crearStorageAlmacen();
@@ -412,12 +453,6 @@ ClaseUsuarios GestorBaseDatos::validarUsuario()
             // Se extrae la instancia completa encontrada
             ClaseUsuarios usuarioLogueado = ususarioPermisos.front();
 
-            cout << "\nUSUARIO ENCONTRADO:" << endl;
-            cout << "Nombre: " << usuarioLogueado.getNombreUsuario() << endl;
-            cout << "Apellido: " << usuarioLogueado.getApellidoUsuario() << endl;
-            cout << "Rol asignado: " << usuarioLogueado.getRolUsuario() << endl;
-            
-            system("pause");
             return usuarioLogueado; // Retorna el objeto completo
         }
         
@@ -426,61 +461,32 @@ ClaseUsuarios GestorBaseDatos::validarUsuario()
     return ClaseUsuarios();
 }
 
-void GestorBaseDatos::ModificarStockGeneral()
+void GestorBaseDatos::correccionStockGeneral()
 {
     ClaseUsuarios usuarioLogueado = validarUsuario();
     if (usuarioLogueado.getRolUsuario() == "ADMINISTRADOR" || usuarioLogueado.getRolUsuario() == "LOGISTICA")
     {
-       cout <<"PERMISOS PARA MODIFICAR EL STOCK:"<<endl;
+        
+        cout << "======= USUARIO VALIDO =======" << endl;
+        cout << "Usted cuenta con los permisios necesarios para continuar:" <<endl;
+        cout << "Usuario:" << usuarioLogueado.getNombreUsuario() <<endl;
+        cout << "Con el rol:" << usuarioLogueado.getRolUsuario() <<endl;
+        cout << "==============================" <<endl;
+        system("pause");
+        
     }
     else
     {
-         cout << "Usted no tiene los permisos para corregir el stock:" <<endl;
-        system ("pause");
+        cout << "======= USUARIO INVALIDO =======" << endl;
+        cout << "Usted no tiene permisos para comprar:" <<endl;
+        cout << "Usuario:" << usuarioLogueado.getNombreUsuario() << endl; 
+        cout << "Su rol de " << "" << usuarioLogueado.getRolUsuario() << "" << " no esta autorizado:" << endl;
+        cout << "==============================" <<endl;
+        system("pause");
         return;
     }
 
-    auto storage = crearStorageAlmacen();
-
-    auto productos = storage.get_all<Productos>(order_by(&Productos::getNombreProducto));
-    if (productos.empty())
-    {
-        cout << "No hay productos cargados en la base de datos." << endl;
-        return;
-    }
-
-    for (auto &prod : productos)
-    {
-        cout << "\n----------------------------------------" << endl;
-        cout << "Producto: " << prod.getNombreProducto() << endl;
-        cout << "Stock actual registrado: " << prod.getStockActual() << endl;
-
-        if (Selector::confirmar("¿Desea cambiar el stock de este producto?"))
-        {
-            int nuevoStock = 0;
-            cout << "Ingrese el nuevo stock actual: ";
-            cin >> nuevoStock;
-            if (cin.fail())
-            {
-                cin.clear();
-                cin.ignore(10000, '\n');
-                cout << "[Error al guardar en BD]" << endl;
-                continue;
-            }
-
-            prod.setStockActual(nuevoStock);
-
-            try
-            {
-                storage.update(prod);
-                cout << "[Guardado en BD con exito]" << endl;
-            }
-            catch (const std::exception &e)
-            {
-                cout << "[Error al guardar en BD] " << e.what() << endl;
-            }
-        }
-    }
+ 
 }
 
 void GestorBaseDatos::SubcategoriasMod()
@@ -697,21 +703,40 @@ void GestorBaseDatos::AltaDeUsuario(string nombreu, string apellidou, string rol
     }
 }
 
-void GestorBaseDatos::comprarProducto()
+void GestorBaseDatos::venderProducto()
 {
+
+    /////Para las lista del sistema hay que crear esas opciones que estan en el excel para que se puedan utilizar aca
+    ///// Para que luego se enlacen en la base de datos y formen parte del programa principal
+    
     ClaseUsuarios userComplete = validarUsuario();
 
     if(userComplete.getRolUsuario() != "ADMINISTRADOR" && userComplete.getRolUsuario() != "VENDEDOR")
     {
+        cout << "======= USUARIO INVALIDO =======" << endl;
         cout << "Usted no tiene permisos para comprar:" <<endl;
+        cout << "Usuario:" << userComplete.getNombreUsuario() << endl; 
+        cout << "Su rol de " << "" << userComplete.getRolUsuario() << "" << " no esta autorizado:" << endl;
+        cout << "==============================" <<endl;
         system("pause");
         return;
+    }
+    else
+    {
+        cout << "======= USUARIO VALIDO =======" << endl;
+        cout << "Usted cuenta con los permisios necesarios para continuar:" <<endl;
+        cout << "Usuario:" << userComplete.getNombreUsuario() <<endl;
+        cout << "Con el rol:" << userComplete.getRolUsuario() <<endl;
+        cout << "==============================" <<endl;
+        system ("pause");
     }
     /////bool cancelarCarga = false;
     auto storage = crearStorageAlmacen();
 
     system ("cls");
     cout << endl << "=========== COMPRAR PRODUCTO  ===========" << endl;
+    
+    
 
     /// --- 1) Elegir la categoria ---
     auto categorias = storage.get_all<CategoriaORM>(order_by(&CategoriaORM::id));
@@ -727,8 +752,13 @@ void GestorBaseDatos::comprarProducto()
     {
         listaCategorias.push_back(std::make_pair(cat.id, cat.nombre));
     }
-
-    int idCategoria = Selector::elegirDeLista("Comprar producto - Elegir categoria", listaCategorias);
+    /// [CAMBIO APLICADO EN LA LINEA 788] El titulo del selector de categoria
+    /// muestra el nombre y el rol del usuario logueado (userComplete, linea 744).
+    int idCategoria = Selector::elegirDeLista(
+        "Comprar producto - Usuario: " + userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario()
+            + " | Rol: " + userComplete.getRolUsuario()
+            + " | Elegir categoria",
+        listaCategorias);
     if (idCategoria == Selector::CANCELADO)
     {
         cout << "Compra cancelada." << endl;
@@ -764,7 +794,13 @@ void GestorBaseDatos::comprarProducto()
         listaSubcategorias.push_back(std::make_pair(sub.id, sub.nombre));
     }
 
-    int idSubcategoria = Selector::elegirDeLista("Comprar producto - Elegir subcategoria", listaSubcategorias);
+    /// [CAMBIO APLICADO EN LA LINEA 830] El titulo del selector de subcategoria
+    /// muestra el nombre y el rol del usuario logueado (userComplete, linea 744).
+    int idSubcategoria = Selector::elegirDeLista(
+        "Comprar producto - Usuario: " + userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario()
+            + " | Rol: " + userComplete.getRolUsuario()
+            + " | Elegir subcategoria",
+        listaSubcategorias);
     if (idSubcategoria == Selector::CANCELADO)
     {
         cout << "Compra cancelada." << endl;
@@ -804,8 +840,12 @@ void GestorBaseDatos::comprarProducto()
     }
 
     /// --- 4) Elegir el producto a comprar ---
+    /// [CAMBIO APLICADO EN LA LINEA 876] El titulo del selector muestra el
+    /// nombre y el rol del usuario logueado (userComplete, declarado en la linea 744). 
     int idProducto = Selector::elegirDeLista(
-        "Comprar producto - " + categoriaElegida.nombre + " / " + subcategoriaElegida.nombre,
+        "Comprar producto - Usuario: " + userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario()
+            + " | Rol: " + userComplete.getRolUsuario()
+            + " | " + categoriaElegida.nombre + " / " + subcategoriaElegida.nombre,
         listaProductos);
 
     if (idProducto == Selector::CANCELADO)
@@ -895,7 +935,7 @@ void GestorBaseDatos::comprarProducto()
         return;
     }
 
-    /// --- 7) Venta: se completan los datos (vendedor y pago) ---
+    /// --- 7) Venta: se completan los datos (vendedor, fecha y total) ---
     auto productoVerificado = storage.get<Productos>(producto.getIdProducto());
 
     cout << endl << "Stock actualizado: " << stockAnterior
@@ -905,21 +945,39 @@ void GestorBaseDatos::comprarProducto()
     Ventas venta;
     venta.realizarVenta(productoVerificado, cantidad);
 
-    /// --- 8) Opcion de anular la venta (solo la puede hacer un ADMINISTRADOR) ---
-    if (userComplete.getRolUsuario() == "ADMINISTRADOR")
+    /// El vendedor es el usuario que inicio sesion al principio.
+    venta.setVendedor(userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario());
+    cout << "Vendedor: " << venta.getVendedor() << endl;
+
+    venta.setTipoMovimiento("VENTA");
+
+    /// --- 8) Pago del cliente y medio de pago ---
+    venta.registrarPagoCliente();
+
+    auto listaSistema = storage.get_all<ListasDeSistema>();
+
+    string medioDePago = "EFECTIVO";
+    if (!listaSistema.empty())
     {
-        if (Selector::confirmar("¿Desea anular la venta?"))
+        vector<string> mediosDePago = separarLista(listaSistema.front().getMediodePago());
+        if (mediosDePago.size() == 1)
         {
-            venta.anular(userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario());
+            medioDePago = mediosDePago[0];
         }
-    }
-    else
-    {
-        cout << endl;
-        cout << "=======================================================" << endl;
-        cout << " Usted no tiene el rol para anular la venta." << endl;
-        cout << " (Solo un ADMINISTRADOR puede anularla)" << endl;
-        cout << "=======================================================" << endl;
+        else if (mediosDePago.size() >= 2)
+        {
+            vector<pair<int, string>> opcionesMedio;
+            for (size_t i = 0; i < mediosDePago.size(); i++)
+            {
+                opcionesMedio.push_back(make_pair((int)i + 1, mediosDePago[i]));
+            }
+
+            int medioElegido = Selector::elegirOpcion("Medio de pago", opcionesMedio);
+            if (medioElegido >= 1 && medioElegido <= (int)mediosDePago.size())
+            {
+                medioDePago = mediosDePago[medioElegido - 1];
+            }
+        }
     }
 
     /// --- 9) Se arma el detalle de la venta (producto + cantidad) ---
@@ -939,6 +997,7 @@ void GestorBaseDatos::comprarProducto()
             ventaORM.totalPagado = venta.getTotalPagado();
             ventaORM.diferenciaPago = venta.getDiferenciaPago();
             ventaORM.estadoVenta = venta.getEstadoVenta() ? "CONFIRMADA" : "ANULADA";
+            ventaORM.tipoMovimiento = venta.getTipoMovimiento();
             ventaORM.anuladaPor = venta.getAnuladaPor();
             ventaORM.fechaHoraAnulacion = venta.getFechaHoraAnulacion();
             ventaORM.motivoAnulacion = venta.getMotivoAnulacion();
@@ -952,6 +1011,7 @@ void GestorBaseDatos::comprarProducto()
             venta.setIdVenta(idVentaGuardada);
 
             PagosVenta pago;
+            pago.setMediodePago(medioDePago);
             pago.generarPagodeVenta(venta);
             storage.insert(pago);
 
@@ -965,24 +1025,88 @@ void GestorBaseDatos::comprarProducto()
         cout << "ERROR al guardar la venta en la base: " << e.what() << endl;
     }
 
-    /// --- 11) Si la venta quedo anulada, se devuelve el stock descontado ---
-    if (!venta.getEstadoVenta())
+    /// --- 11) Ticket de la venta ---
+    venta.mostrarTicket(productoVerificado, cantidad);
+
+    /// --- 12) Despues del ticket, el ADMINISTRADOR puede anular la venta ---
+    ///  La venta ya quedo guardada: se marca ANULADA con el motivo y la
+    ///  observacion, y se devuelve el stock descontado.
+    if (userComplete.getRolUsuario() == "ADMINISTRADOR" && idVentaGuardada > 0)
     {
-        try
+        if (Selector::confirmar("¿Desea anular la venta?"))
         {
-            productoVerificado.setStockActual(productoVerificado.getStockActual() + cantidad);
-            storage.update(productoVerificado);
-            cout << endl << "[Venta anulada: se devolvio el stock - Stock actual: "
-                 << productoVerificado.getStockActual() << "]" << endl;
-        }
-        catch (const std::exception &e)
-        {
-            cout << "ERROR al devolver el stock: " << e.what() << endl;
+            /// Motivo: se elige entre las opciones de la lista del sistema.
+            vector<string> motivos;
+            if (!listaSistema.empty())
+            {
+                motivos = separarLista(listaSistema.front().getmotivoCorreccion());
+            }
+            if (motivos.empty())
+            {
+                motivos = {"ROTURA", "VENCIMIENTO", "DIFERENCIA DE INVENTARIO",
+                           "ERROR DE CARGA", "PÉRDIDA / ROBO", "OTRO"};
+            }
+
+            vector<pair<int, string>> opcionesMotivo;
+            for (size_t i = 0; i < motivos.size(); i++)
+            {
+                opcionesMotivo.push_back(make_pair((int)i + 1, motivos[i]));
+            }
+
+            string motivo = "OTRO";
+            int motivoElegido = Selector::elegirOpcion("Motivo de anulacion", opcionesMotivo);
+            if (motivoElegido >= 1 && motivoElegido <= (int)motivos.size())
+            {
+                motivo = motivos[motivoElegido - 1];
+            }
+
+            /// Tipo de movimiento: opcion "ANULACIÓN VENTA" de la lista del sistema.
+            string tipoAnulacion = "ANULACIÓN VENTA";
+            if (!listaSistema.empty())
+            {
+                vector<string> tipos = separarLista(listaSistema.front().getTipoMovimiento());
+                for (auto &tipo : tipos)
+                {
+                    if (tipo == "ANULACIÓN VENTA")
+                    {
+                        tipoAnulacion = tipo;
+                        break;
+                    }
+                }
+            }
+
+            /// Datos de la anulacion (tambien pide la observacion).
+            venta.anular(userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario(), motivo);
+            venta.setTipoMovimiento(tipoAnulacion);
+
+            try
+            {
+                /// La venta guardada se marca ANULADA (no se borra).
+                VentaORM ventaAnuladaORM = storage.get<VentaORM>(idVentaGuardada);
+                ventaAnuladaORM.estadoVenta = "ANULADA";
+                ventaAnuladaORM.tipoMovimiento = tipoAnulacion;
+                ventaAnuladaORM.anuladaPor = venta.getAnuladaPor();
+                ventaAnuladaORM.fechaHoraAnulacion = venta.getFechaHoraAnulacion();
+                ventaAnuladaORM.motivoAnulacion = venta.getMotivoAnulacion();
+                ventaAnuladaORM.observacion = venta.getObservacion();
+                storage.update(ventaAnuladaORM);
+
+                /// Se devuelve el stock descontado.
+                productoVerificado.setStockActual(productoVerificado.getStockActual() + cantidad);
+                storage.update(productoVerificado);
+
+                cout << endl << "=======================================================" << endl;
+                cout << " Venta N° " << idVentaGuardada << " anulada. Motivo: " << motivo << endl;
+                cout << " Anulada por: " << venta.getAnuladaPor() << endl;
+                cout << " Stock devuelto - Stock actual: " << productoVerificado.getStockActual() << endl;
+                cout << "=======================================================" << endl;
+            }
+            catch (const std::exception &e)
+            {
+                cout << "ERROR al anular la venta: " << e.what() << endl;
+            }
         }
     }
-
-    /// --- 12) Ticket de la venta ---
-    venta.mostrarTicket(productoVerificado, cantidad);
 
     cout << "Recordatorio: los ajustes manuales de stock los realiza aparte" << endl;
     cout << "un usuario con permisos (ADMINISTRADOR / LOGISTICA)." << endl;
@@ -1029,17 +1153,18 @@ void GestorBaseDatos::mostrarUltimaVenta()
     cout << " Pagado   : $" << dinero(ultima.totalPagado) << endl;
     if (ultima.diferenciaPago >= 0.0)
     {
-        cout << " Vuelto   : $" << dinero(ultima.diferenciaPago) << endl;
+        cout << " Diferencia de pago: $" << dinero(ultima.diferenciaPago) << " (vuelto)" << endl;
     }
     else
     {
-        cout << " Falta    : $" << dinero(-ultima.diferenciaPago) << endl;
+        cout << " Diferencia de pago: $" << dinero(-ultima.diferenciaPago) << " (falta)" << endl;
     }
     if (!pagos.empty())
     {
         cout << " Pago     : " << pagos.front().getMediodePago() << endl;
     }
     cout << " Estado   : " << ultima.estadoVenta << endl;
+    cout << " Movimiento: " << ultima.tipoMovimiento << endl;
 
     if (ultima.estadoVenta != "CONFIRMADA")
     {

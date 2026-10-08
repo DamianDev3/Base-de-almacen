@@ -1,6 +1,7 @@
 #pragma once
 #include "../lib/sqlite/sqlite3.h"
 #include "../include/ClaseUsuarios.h"
+#include "../include/Productos.h"
 #include <iostream>
 
 using namespace std;
@@ -17,17 +18,18 @@ void mostrarBD(int limite = 30);
 void AlmacenInventario();
 void buscarCategoria(int);
 ClaseUsuarios validarUsuario();
-void ModificarStockGeneral();
+void correccionStockGeneral();
 void SubcategoriasMod();
 void CategoriasMod();
-void comprarProducto();
+void venderProducto();
 void registrarVenta();
 void mostrarUltimaVenta();
 void mostrarUltimoDetalle();
 void mostrarUltimoPago();
 int elegirCategoria(const std::string& titulo);
 void AltaDeUsuario(std::string,std::string,std::string,std::string);
-
+void CompraAutomatica(Productos);
+void MovimientosStock();
 
 
 

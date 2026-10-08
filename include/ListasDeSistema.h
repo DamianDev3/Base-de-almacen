@@ -17,15 +17,15 @@ public:
     void setUnidadMedicion(std::string);
 
     ////GETTERS
-    std::string getRolsistema();
-    std::string getRevisionPrecio();
-    std::string getEstadoCompra();
-    std::string getDireccionstock();
-    std::string getTipoMovimiento();
-    std::string getmotivoCorreccion();
-    std::string getMediodePago();
-    std::string getEstadoVenta();
-    std::string getUnidadMedicon();
+    std::string getRolsistema() const;
+    std::string getRevisionPrecio() const;
+    std::string getEstadoCompra() const;
+    std::string getDireccionstock() const;
+    std::string getTipoMovimiento() const;
+    std::string getmotivoCorreccion() const;
+    std::string getMediodePago() const;
+    std::string getEstadoVenta() const;
+    std::string getUnidadMedicon() const;
 
 private:
 std::string _rolDelsistema;

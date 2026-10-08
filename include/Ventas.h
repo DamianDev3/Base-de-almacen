@@ -23,6 +23,7 @@ void setAnuladaPor(std::string);
 void setFechaHoraAnulacion(std::string);
 void setMotivoAnulacion(std::string);
 void setObservacion(std::string);
+void setTipoMovimiento(std::string);
 
 ////GETTERS
 int getIdVenta();
@@ -36,6 +37,7 @@ std::string getAnuladaPor();
 std::string getFechaHoraAnulacion();
 std::string getMotivoAnulacion();
 std::string getObservacion();
+std::string getTipoMovimiento();
 
 ///// FECHA Y HORA (ctime)
 void ingresarFechaHoraActual();
@@ -44,7 +46,8 @@ std::string getHoraFormateada();
 std::string getFechaHoraSQL();
 
 void realizarVenta(const Productos& producto, int cantidad);
-void anular(const std::string& usuario);
+void registrarPagoCliente();
+void anular(const std::string& usuario, const std::string& motivo);
 void ventaGenerada();
 void mostrarTicket(const Productos& producto, int cantidad);
 
@@ -60,6 +63,7 @@ std::string _anuladaPor;
 std::string _fechaHoraAnulacion;
 std::string _motivoAnulacion;
 std::string _observacion;
+std::string _tipoMovimiento;
 
 
 };

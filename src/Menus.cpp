@@ -32,6 +32,7 @@ void Menus::Menugeneral()
         {6, "Ultima venta realizada"},
         {7, "Ultimo detalle de venta"},
         {8, "Ultimo pago de venta"},
+        {9, "Modificar stock"},
         {0, "Salir del programa"}
     };
 
@@ -58,7 +59,7 @@ void Menus::Menugeneral()
             productin.lecturaProducto();
             break;
         case 4:
-            bd.comprarProducto();
+            bd.venderProducto();
             break;
         case 5:
             bd.CategoriasMod();
@@ -72,7 +73,11 @@ void Menus::Menugeneral()
         case 8:
             bd.mostrarUltimoPago();
             break;
+            case 9:
+            bd.correccionStockGeneral();
+            break;
         case 0:
+
             cout << "SALIENDO DEL PROGRAMA:" << endl;
             system("pause");
             condicion = true;

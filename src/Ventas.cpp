@@ -30,6 +30,7 @@ Ventas::Ventas()
     _fechaHoraAnulacion = "";
     _motivoAnulacion = "";
     _observacion = "";
+    _tipoMovimiento = "";
 }
 
 Ventas::Ventas(int idVenta, int fecha, double totalVenta, double totalPagado, double diferenciaDePago, bool estadoVenta)
@@ -45,6 +46,7 @@ Ventas::Ventas(int idVenta, int fecha, double totalVenta, double totalPagado, do
     _fechaHoraAnulacion = "";
     _motivoAnulacion = "";
     _observacion = "";
+    _tipoMovimiento = "";
 }
 
 Ventas::~Ventas()
@@ -107,6 +109,11 @@ void Ventas::setObservacion(string observacion)
     _observacion = observacion;
 }
 
+void Ventas::setTipoMovimiento(string tipoMovimiento)
+{
+    _tipoMovimiento = tipoMovimiento;
+}
+
 ///// GETTERS
 int Ventas::getIdVenta()
 {
@@ -163,6 +170,11 @@ string Ventas::getObservacion()
     return _observacion;
 }
 
+string Ventas::getTipoMovimiento()
+{
+    return _tipoMovimiento;
+}
+
 ///// FECHA Y HORA (ctime)
 
 /// Guarda en _fecha la fecha y hora actuales del sistema (formato time_t).
@@ -214,29 +226,27 @@ string Ventas::getFechaHoraSQL()
     return string(buffer);
 }
 
-//// VENTA DE UN PRODUCTO: pide vendedor y pago y completa los datos de la venta.
-///  (El ticket se muestra con mostrarTicket y el guardado en la base lo hace
-///  GestorBaseDatos en las tablas Ventas, Detalle_Ventas y Pagos_Venta.)
+//// VENTA DE UN PRODUCTO: completa los datos de la venta (fecha, total y estado).
+///  El vendedor lo asigna GestorBaseDatos con el usuario que inicio sesion.
+///  El pago se registra despues con registrarPagoCliente(), solo si la venta
+///  no se anula. El ticket se muestra con mostrarTicket y el guardado en la
+///  base lo hace GestorBaseDatos en las tablas Ventas, Detalle_Ventas y Pagos_Venta.
 void Ventas::realizarVenta(const Productos& producto, int cantidad)
 {
     ingresarFechaHoraActual();
     _totalVenta = redondearCentavos(producto.getPrecio() * cantidad);
     _estadoVenta = true;
+    _totalPagado = 0.0;
+    _diferenciaDePago = 0.0;
     _anuladaPor = "";
     _fechaHoraAnulacion = "";
     _motivoAnulacion = "";
     _observacion = "";
+}
 
-    /// --- Vendedor ---
-    cout << endl << "Vendedor: ";
-    cin >> ws;
-    getline(cin, _vendedor);
-    if (_vendedor.empty())
-    {
-        _vendedor = "SIN_NOMBRE";
-    }
-
-    /// --- Pago del cliente ---
+//// PAGO DEL CLIENTE: pide el monto abonado y calcula el vuelto o lo que falta.
+void Ventas::registrarPagoCliente()
+{
     cout << "Total de la venta: $" << dinero(_totalVenta) << endl;
     double pagado = 0.0;
     while (true)
@@ -261,13 +271,19 @@ void Ventas::realizarVenta(const Productos& producto, int cantidad)
     _diferenciaDePago = redondearCentavos(_totalPagado - _totalVenta);
 }
 
-//// ANULAR: marca la venta como anulada y pide los datos de la anulacion.
+//// ANULAR: marca la venta como anulada. El motivo llega elegido desde la
+///  lista del sistema; aca solo se pide la observacion.
 ///  (La fecha y hora se toman en el momento de anular; el "anulada por" lo
 ///  informa el sistema con el usuario que tiene la sesion abierta.)
-void Ventas::anular(const std::string& usuario)
+void Ventas::anular(const std::string& usuario, const std::string& motivo)
 {
     _estadoVenta = false;
     _anuladaPor = usuario;
+    _motivoAnulacion = motivo;
+    if (_motivoAnulacion.empty())
+    {
+        _motivoAnulacion = "OTRO";
+    }
 
     // Fecha y hora del momento de la anulacion.
     time_t ahora = time(nullptr);
@@ -281,14 +297,6 @@ void Ventas::anular(const std::string& usuario)
     else
     {
         _fechaHoraAnulacion = "";
-    }
-
-    cout << "Motivo de anulacion: ";
-    cin >> ws;
-    getline(cin, _motivoAnulacion);
-    if (_motivoAnulacion.empty())
-    {
-        _motivoAnulacion = "SIN_MOTIVO";
     }
 
     cout << "Observacion: ";
@@ -317,13 +325,14 @@ void Ventas::mostrarTicket(const Productos& producto, int cantidad)
     cout << " Pagado   : $" << dinero(_totalPagado) << endl;
     if (_diferenciaDePago >= 0.0)
     {
-        cout << " Vuelto   : $" << dinero(_diferenciaDePago) << endl;
+        cout << " Diferencia de pago: $" << dinero(_diferenciaDePago) << " (vuelto)" << endl;
     }
     else
     {
-        cout << " Falta    : $" << dinero(-_diferenciaDePago) << endl;
+        cout << " Diferencia de pago: $" << dinero(-_diferenciaDePago) << " (falta)" << endl;
     }
     cout << " Estado   : " << (_estadoVenta ? "CONFIRMADA" : "ANULADA") << endl;
+    cout << " Movimiento: " << _tipoMovimiento << endl;
     if (!_estadoVenta)
     {
         cout << " ------- Datos de anulacion -------" << endl;
