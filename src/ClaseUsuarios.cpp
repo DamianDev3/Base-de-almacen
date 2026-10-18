@@ -6,6 +6,11 @@
 #include <string>
 
 using namespace std; 
+
+/// Definicion del usuario logueado (miembro estatico de la clase).
+/// Sin esta linea el linker da "undefined reference to ClaseUsuarios::_usuarioLogeado".
+ClaseUsuarios ClaseUsuarios::_usuarioLogeado;
+
  ClaseUsuarios::ClaseUsuarios()
 {
     _idUsuario = 0;
@@ -26,6 +31,7 @@ void ClaseUsuarios::setIdUsuario(int idUser)
 {
     _idUsuario = idUser;
 }
+
 void ClaseUsuarios::setNombreUsuario(string nombreUser)
 {
     _nombreUsuario = nombreUser;
@@ -33,6 +39,10 @@ void ClaseUsuarios::setNombreUsuario(string nombreUser)
 void ClaseUsuarios::setApellidoUsuario(string apellidoUser)
 {
     _apellidoUsuario = apellidoUser;
+}
+void ClaseUsuarios::setUsuarioLogeado(const ClaseUsuarios & usuarioLogeado)
+{
+ _usuarioLogeado = usuarioLogeado;
 }
 void ClaseUsuarios::setRolUsuario(string rolUser)
 {
@@ -65,6 +75,11 @@ string ClaseUsuarios::getPassword() const
 {
     return _password;
 }
+const ClaseUsuarios ClaseUsuarios::getUsuarioLogeado()
+{
+return _usuarioLogeado;
+}
+
 void ClaseUsuarios::cargaDeUsuario()
 {
     GestorBaseDatos cargaUser;
@@ -117,3 +132,4 @@ void ClaseUsuarios::cargaDeUsuario()
     
 
 }
+

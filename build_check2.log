@@ -1,0 +1,19 @@
+src/GestorBaseDatos.cpp: In member function 'void GestorBaseDatos::generarCompraDehoy()':
+src/GestorBaseDatos.cpp:1728:5: error: 'idcodigoInterno' was not declared in this scope
+     idcodigoInterno = stockBajo.getIdProducto();
+     ^~~~~~~~~~~~~~~
+src/GestorBaseDatos.cpp:1732:5: error: 'stockActual' was not declared in this scope
+     stockActual = stockBajo.getsto();
+     ^~~~~~~~~~~
+src/GestorBaseDatos.cpp:1732:29: error: 'class Productos' has no member named 'getsto'; did you mean 'getEan'?
+     stockActual = stockBajo.getsto();
+                             ^~~~~~
+src/GestorBaseDatos.cpp:1733:5: error: 'stockMinimo' was not declared in this scope
+     stockMinimo = stockBajo.getStockMinimo();
+     ^~~~~~~~~~~
+src/GestorBaseDatos.cpp:1734:5: error: 'stockObjetivo' was not declared in this scope
+     stockObjetivo = stockBajo.getStockObjetivo();
+     ^~~~~~~~~~~~~
+src/GestorBaseDatos.cpp:1755:1: error: expected '}' at end of input
+ }
+ ^

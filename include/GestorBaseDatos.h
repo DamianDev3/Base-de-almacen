@@ -30,7 +30,7 @@ int elegirCategoria(const std::string& titulo);
 void AltaDeUsuario(std::string,std::string,std::string,std::string);
 void CompraAutomatica(Productos);
 void MovimientosStock();
-
+bool generarCompraDehoy();
 
 
 private:

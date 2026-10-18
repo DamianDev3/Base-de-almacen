@@ -20,7 +20,7 @@ namespace
 Ventas::Ventas()
 {
     _idVenta = 0;
-    _fecha = 0;
+    _fecha = "";
     _vendedor = "";
     _totalVenta = 0.0;
     _totalPagado = 0.0;
@@ -33,7 +33,7 @@ Ventas::Ventas()
     _tipoMovimiento = "";
 }
 
-Ventas::Ventas(int idVenta, int fecha, double totalVenta, double totalPagado, double diferenciaDePago, bool estadoVenta)
+Ventas::Ventas(int idVenta, string fecha, double totalVenta, double totalPagado, double diferenciaDePago, bool estadoVenta)
 {
     _idVenta = idVenta;
     _fecha = fecha;
@@ -59,7 +59,7 @@ void Ventas::setIdVenta(int idVenta)
     _idVenta = idVenta;
 }
 
-void Ventas::setFechaVenta(int fecha)
+void Ventas::setFechaVenta(string fecha)
 {
     _fecha = fecha;
 }
@@ -120,7 +120,7 @@ int Ventas::getIdVenta()
     return _idVenta;
 }
 
-int Ventas::getFecha()
+string Ventas::getFecha()
 {
     return _fecha;
 }
@@ -177,53 +177,51 @@ string Ventas::getTipoMovimiento()
 
 ///// FECHA Y HORA (ctime)
 
-/// Guarda en _fecha la fecha y hora actuales del sistema (formato time_t).
+/// Guarda en _fecha la fecha y hora actuales del sistema, en formato
+/// SQLite: "aaaa-mm-dd hh:mm:ss" (el mismo de la columna fecha_hora).
 void Ventas::ingresarFechaHoraActual()
 {
-    _fecha = static_cast<int>(time(nullptr));
+    time_t ahora = time(nullptr);
+    tm* fechaLocal = localtime(&ahora);
+    if (fechaLocal != nullptr)
+    {
+        char buffer[20];  // "aaaa-mm-dd hh:mm:ss" + fin de cadena
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", fechaLocal);
+        _fecha = string(buffer);
+    }
+    else
+    {
+        _fecha = "";
+    }
 }
 
 /// Devuelve la fecha guardada formateada como "dd/mm/aaaa".
+/// _fecha se guarda como "aaaa-mm-dd hh:mm:ss".
 string Ventas::getFechaFormateada()
 {
-    time_t t = static_cast<time_t>(_fecha);
-    tm* fechaLocal = localtime(&t);
-    if (fechaLocal == nullptr)
+    if (_fecha.size() < 10)
     {
         return "";
     }
-    char buffer[11];  // "dd/mm/aaaa" + fin de cadena
-    strftime(buffer, sizeof(buffer), "%d/%m/%Y", fechaLocal);
-    return string(buffer);
+    return _fecha.substr(8, 2) + "/" + _fecha.substr(5, 2) + "/" + _fecha.substr(0, 4);
 }
 
 /// Devuelve la hora guardada formateada como "hh:mm:ss".
+/// _fecha se guarda como "aaaa-mm-dd hh:mm:ss".
 string Ventas::getHoraFormateada()
 {
-    time_t t = static_cast<time_t>(_fecha);
-    tm* horaLocal = localtime(&t);
-    if (horaLocal == nullptr)
+    if (_fecha.size() < 19)
     {
         return "";
     }
-    char buffer[9];  // "hh:mm:ss" + fin de cadena
-    strftime(buffer, sizeof(buffer), "%H:%M:%S", horaLocal);
-    return string(buffer);
+    return _fecha.substr(11, 8);
 }
 
 /// Devuelve la fecha y hora en formato SQLite: "aaaa-mm-dd hh:mm:ss".
 /// Es el formato que espera la columna fecha_hora de la tabla Ventas.
 string Ventas::getFechaHoraSQL()
 {
-    time_t t = static_cast<time_t>(_fecha);
-    tm* fechaLocal = localtime(&t);
-    if (fechaLocal == nullptr)
-    {
-        return "";
-    }
-    char buffer[20];  // "aaaa-mm-dd hh:mm:ss" + fin de cadena
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", fechaLocal);
-    return string(buffer);
+    return _fecha;
 }
 
 //// VENTA DE UN PRODUCTO: completa los datos de la venta (fecha, total y estado).

@@ -9,11 +9,11 @@ public:
 ///// CONSTRUCTOR
 
 Ventas();
-Ventas(int,int,double,double,double,bool);
+Ventas(int,std::string,double,double,double,bool);
 ~Ventas();
 ////SETTERS
 void setIdVenta(int);
-void setFechaVenta(int);
+void setFechaVenta(std::string);
 void setVendedor(std::string);
 void setTotalVenta(double);
 void setTotalPagado(double);
@@ -27,7 +27,7 @@ void setTipoMovimiento(std::string);
 
 ////GETTERS
 int getIdVenta();
-int getFecha();
+std::string getFecha();
 std::string getVendedor();
 double getTotalVenta();
 double getTotalPagado();
@@ -50,10 +50,10 @@ void registrarPagoCliente();
 void anular(const std::string& usuario, const std::string& motivo);
 void ventaGenerada();
 void mostrarTicket(const Productos& producto, int cantidad);
-
+void comparadorVTA();
 private:
 int _idVenta;
-int _fecha;
+std::string _fecha;
 std::string _vendedor;
 double _totalVenta;
 double _totalPagado;

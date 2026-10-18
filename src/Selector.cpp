@@ -1,5 +1,6 @@
 #include "../include/Selector.h"
 #include "../include/rlutil.h"
+#include "../include/ClaseUsuarios.h"
 #include <cstdlib>
 #include <iostream>
 
@@ -83,11 +84,17 @@ namespace
     void dibujarTitulo(const string& titulo, const string& ayuda)
     {
         limpiarPantalla();
-        cout << "========================================================" << endl;
-        cout << " " << titulo << endl;
-        cout << "========================================================" << endl;
-        cout << " " << ayuda << endl << endl;
-    }
+        ClaseUsuarios usuarioActual = ClaseUsuarios::getUsuarioLogeado();
+        if (!usuarioActual.getNombreUsuario().empty())
+        {
+            cout << "========================================================" << endl;
+            cout << " " << titulo << endl;
+            cout << "Usuario Actual:"<< "" << usuarioActual.getNombreUsuario() << " " << usuarioActual.getApellidoUsuario() <<endl;  
+            cout << "Rol:" << "" << usuarioActual.getRolUsuario() <<endl;
+            cout << "========================================================" << endl;
+            cout << " " << ayuda << endl << endl;
+        }
+        }
 
     /// Convierte una linea en un numero entero. Devuelve true si pudo.
     bool lineaANumero(const string& linea, int& numero)

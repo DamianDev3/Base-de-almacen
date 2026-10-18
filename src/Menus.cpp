@@ -7,12 +7,14 @@
 #include "../include/Productos.h"
 #include "../include/ClaseUsuarios.h"
 #include "../include/Selector.h"
+#include "../include/MovimientoStock.h"
 #include "windows.h"
 #include <iostream>
 using namespace std;
 
 void Menus::Menugeneral()
-{
+{   
+    
     bool condicion = false;
     Ventas venta;
     BasedeAlmacen almacen;
@@ -21,9 +23,13 @@ void Menus::Menugeneral()
     subCategoria subCat;
     GestorBaseDatos bd;
     ClaseUsuarios altaUser;
+    MovimientoStock movimiento;
 
+    ClaseUsuarios usuarioLogeado = bd.validarUsuario();
+    ClaseUsuarios::setUsuarioLogeado(usuarioLogeado);
     const std::vector<std::pair<int, std::string>> opcionesDelMenu =
     {
+
         {1, "Alta de usuario"},
         {2, "Mostrar Almacen"},
         {3, "Leer producto"},
@@ -33,11 +39,15 @@ void Menus::Menugeneral()
         {7, "Ultimo detalle de venta"},
         {8, "Ultimo pago de venta"},
         {9, "Modificar stock"},
+        {10, "Movimientos de stock"},
+        {11,"Comprar hoy generado"},
+        {12,"Modificar subcategoria"},
         {0, "Salir del programa"}
     };
 
     do
     {
+       /// cout << "Usuario: " << "" << ClaseUsuarios::getUsuarioLogeado().getNombreUsuario() <<endl;
         int opciones = Selector::elegirOpcion("Menu General", opcionesDelMenu);
 
         if (opciones == Selector::CANCELADO)
@@ -76,6 +86,18 @@ void Menus::Menugeneral()
             case 9:
             bd.correccionStockGeneral();
             break;
+        case 10:
+            bd.MovimientosStock();
+            break;
+       
+        case 11:
+            movimiento.comprarHoy();
+            break;
+       
+        case 12:
+            bd.SubcategoriasMod();
+            break;
+       
         case 0:
 
             cout << "SALIENDO DEL PROGRAMA:" << endl;
