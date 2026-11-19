@@ -7,8 +7,6 @@
 
 using namespace std; 
 
-/// Definicion del usuario logueado (miembro estatico de la clase).
-/// Sin esta linea el linker da "undefined reference to ClaseUsuarios::_usuarioLogeado".
 ClaseUsuarios ClaseUsuarios::_usuarioLogeado;
 
  ClaseUsuarios::ClaseUsuarios()
@@ -82,23 +80,27 @@ return _usuarioLogeado;
 
 void ClaseUsuarios::cargaDeUsuario()
 {
-    GestorBaseDatos cargaUser;
-    cargaUser.conectar("db/Almacen.db"); 
-    if (!cargaUser.conectar("db/Almacen.db"))
+    ClaseUsuarios usuarioActual = ClaseUsuarios::getUsuarioLogeado();
+    if (usuarioActual.getRolUsuario() != "ADMINISTRADOR")
     {
-        cout << "No se pudo conectar a la base de datos:" <<endl;
+        cout << "======= USUARIO INVALIDO =======" << endl;
+        cout << "Solo un ADMINISTRADOR puede dar de alta usuarios." << endl;
+        cout << "Usuario: " << usuarioActual.getNombreUsuario() << endl;
+        cout << "Rol: " << usuarioActual.getRolUsuario() << endl;
+        cout << "================================" << endl;
         system("pause");
         return;
     }
-    
+
     int opcion = Selector::elegirOpcion("Alta de usuario - Rol del nuevo usuario",
     {
         {1, "Administrador"},
         {2, "Logistica"},
-        {3, "Vendedor"}
+        {3, "Vendedor"},
+        {0, "Cancelar"}
     });
 
-    if (opcion == Selector::CANCELADO)
+    if (opcion == Selector::CANCELADO || opcion == 0)
     {
         cout << "Alta de usuario cancelada." << endl;
         system("pause");
@@ -117,19 +119,72 @@ void ClaseUsuarios::cargaDeUsuario()
     {
         _rolUsuario = "VENDEDOR";
     }
-    cout << "Usted eligio: " << _rolUsuario << endl;
+    cout << "Rol elegido: " << _rolUsuario << endl << endl;
 
-    cout << "Ingrese nombre del usuario:" << endl;
-    cin >> _nombreUsuario;
+    do
+    {
+        cout << "Nombre del usuario: ";
+        if (!getline(cin >> ws, _nombreUsuario))
+        {
+            cout << "Sin entrada. Alta de usuario cancelada." << endl;
+            system("pause");
+            return;
+        }
+        if (_nombreUsuario.empty())
+        {
+            cout << "El nombre no puede quedar vacio." << endl;
+        }
+    } while (_nombreUsuario.empty());
 
-    cout << "Ingrese el apellido del usuario:" << endl;
-    cin >> _apellidoUsuario;
+    do
+    {
+        cout << "Apellido del usuario: ";
+        if (!getline(cin >> ws, _apellidoUsuario))
+        {
+            cout << "Sin entrada. Alta de usuario cancelada." << endl;
+            system("pause");
+            return;
+        }
+        if (_apellidoUsuario.empty())
+        {
+            cout << "El apellido no puede quedar vacio." << endl;
+        }
+    } while (_apellidoUsuario.empty());
 
-    cout << "Cree la su contraseña: " << endl;
-    cin >> _password;
-    cargaUser.AltaDeUsuario(_nombreUsuario, _apellidoUsuario, _rolUsuario, _password);
+    do
+    {
+        cout << "Contrasena del usuario: ";
+        if (!getline(cin >> ws, _password))
+        {
+            cout << "Sin entrada. Alta de usuario cancelada." << endl;
+            system("pause");
+            return;
+        }
+        if (_password.empty())
+        {
+            cout << "La contrasena no puede quedar vacia." << endl;
+        }
+    } while (_password.empty());
+
+    string confirmacion;
+    do
+    {
+        cout << "Repita la contrasena: ";
+        if (!getline(cin >> ws, confirmacion))
+        {
+            cout << "Sin entrada. Alta de usuario cancelada." << endl;
+            system("pause");
+            return;
+        }
+        if (confirmacion != _password)
+        {
+            cout << "Las contrasenas no coinciden. Intente de nuevo." << endl;
+        }
+    } while (confirmacion != _password);
+
+    GestorBaseDatos altaUsuario;
+    altaUsuario.AltaDeUsuario(_nombreUsuario, _apellidoUsuario, _rolUsuario, _password);
+
     system("pause");
-    
-
 }
 

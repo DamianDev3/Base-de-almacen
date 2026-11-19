@@ -5,7 +5,6 @@ class ListasDeSistema
 public:
     ListasDeSistema();
     ListasDeSistema(std::string, std::string, std::string, std::string, std::string, std::string, std::string, std::string, std::string);
-    ////SETTERS
     void setRoldeSistema(std::string);
     void setRevicionPrecio(std::string);
     void setEstadoCompra(std::string);
@@ -16,7 +15,6 @@ public:
     void setEstadodeVenta(std::string);
     void setUnidadMedicion(std::string);
 
-    ////GETTERS
     std::string getRolsistema() const;
     std::string getRevisionPrecio() const;
     std::string getEstadoCompra() const;

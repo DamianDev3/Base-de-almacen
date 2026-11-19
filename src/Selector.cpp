@@ -1,6 +1,7 @@
 #include "../include/Selector.h"
 #include "../include/rlutil.h"
 #include "../include/ClaseUsuarios.h"
+#include "../include/GestorBaseDatos.h"
 #include <cstdlib>
 #include <iostream>
 
@@ -8,10 +9,9 @@ using namespace std;
 
 namespace
 {
-    /// Detecta si la entrada es una consola interactiva (se pueden usar flechas).
     bool detectarConsola()
     {
-        static int resultado = -1;   // -1: sin calcular, 0: no, 1: si
+        static int resultado = -1;
 
         if (resultado < 0)
         {
@@ -45,7 +45,6 @@ namespace
         }
     }
 
-    /// Traduce los codigos de rlutil a los codigos propios.
     int traducirTecla(int tecla)
     {
         switch (tecla)
@@ -62,8 +61,6 @@ namespace
         }
     }
 
-    /// Devuelve el digito (0-9) si la tecla es numerica (incluye el teclado
-    /// numerico), o -1 si no lo es.
     int digitoDeTecla(int tecla)
     {
         if (tecla >= '0' && tecla <= '9')
@@ -83,20 +80,42 @@ namespace
 
     void dibujarTitulo(const string& titulo, const string& ayuda)
     {
-        limpiarPantalla();
         ClaseUsuarios usuarioActual = ClaseUsuarios::getUsuarioLogeado();
-        if (!usuarioActual.getNombreUsuario().empty())
+        bool hayUsuario = !usuarioActual.getNombreUsuario().empty() &&
+                          usuarioActual.getRolUsuario() != "Usuario_sin_rol";
+
+        bool stockBajo = false;
+        GestorBaseDatos bd;
+        
+        if (bd.consultarStock() == true)
         {
-            cout << "========================================================" << endl;
-            cout << " " << titulo << endl;
-            cout << "Usuario Actual:"<< "" << usuarioActual.getNombreUsuario() << " " << usuarioActual.getApellidoUsuario() <<endl;  
-            cout << "Rol:" << "" << usuarioActual.getRolUsuario() <<endl;
-            cout << "========================================================" << endl;
-            cout << " " << ayuda << endl << endl;
-        }
+            stockBajo = true;
         }
 
-    /// Convierte una linea en un numero entero. Devuelve true si pudo.
+        limpiarPantalla();
+
+        cout << "========================================================" << endl;
+        cout << " " << titulo << endl;
+        if (hayUsuario)
+        {
+            cout << "Usuario Actual: " << usuarioActual.getNombreUsuario() << " " << usuarioActual.getApellidoUsuario() << endl;
+            cout << "Rol: " << usuarioActual.getRolUsuario() << endl;
+            
+        }
+        if (stockBajo == true && usuarioActual.getRolUsuario() == "ADMINISTRADOR")
+        {
+            cout << "Se detecto un producto bajo en stock, desea generar la compra de hoy?" <<endl;
+            
+        }
+        else if (stockBajo == true && usuarioActual.getRolUsuario() == "VENDEDOR")
+        {
+            cout << "Se genero la compra de hoy por faltante de stock" <<endl;
+        
+        }
+        cout << "========================================================" << endl;
+        cout << " " << ayuda << endl << endl;
+    }
+
     bool lineaANumero(const string& linea, int& numero)
     {
         if (linea.empty())
@@ -132,8 +151,6 @@ int leerTecla()
         return traducirTecla(rlutil::getkey());
     }
 
-    /// Sin consola (entrada redirigida): se lee una linea y se usa su primer
-    /// caracter. Las lineas vacias se ignoran.
     while (true)
     {
         string linea;
@@ -159,7 +176,6 @@ int elegirOpcion(const string& titulo, const vector<pair<int, string>>& opciones
         return CANCELADO;
     }
 
-    /// --- Sin consola: se elige escribiendo el numero ---
     if (!hayConsola())
     {
         while (true)
@@ -201,7 +217,6 @@ int elegirOpcion(const string& titulo, const vector<pair<int, string>>& opciones
         }
     }
 
-    /// --- Con consola: flechas arriba/abajo + Enter (o el numero directo) ---
     prepararColores();
     int seleccion = 0;
 
@@ -261,7 +276,6 @@ int elegirOpcion(const string& titulo, const vector<pair<int, string>>& opciones
 
 bool confirmar(const string& pregunta, bool porDefecto)
 {
-    /// --- Sin consola: se responde con s o n ---
     if (!hayConsola())
     {
         while (true)
@@ -293,16 +307,14 @@ bool confirmar(const string& pregunta, bool porDefecto)
         }
     }
 
-    /// --- Con consola: flechas para cambiar y Enter para confirmar ---
     prepararColores();
-    int seleccion = porDefecto ? 0 : 1;   // 0 = Si, 1 = No
+    int seleccion = porDefecto ? 0 : 1;
 
     string base = pregunta + "  (s/n)   ";
     int largoDibujado = 0;
 
     while (true)
     {
-        // Borra lo dibujado antes en esta misma linea y vuelve a dibujar.
         cout << "\r" << string(largoDibujado, ' ') << "\r";
 
         cout << base;
@@ -381,7 +393,6 @@ int elegirDeLista(const string& titulo, const vector<pair<int, string>>& items)
         return CANCELADO;
     }
 
-    /// --- Sin consola: se elige escribiendo el ID ---
     if (!hayConsola())
     {
         while (true)
@@ -431,7 +442,6 @@ int elegirDeLista(const string& titulo, const vector<pair<int, string>>& items)
         }
     }
 
-    /// --- Con consola: lista paginada con flechas + ID escrito ---
     prepararColores();
     const int POR_PAGINA = 12;
 
@@ -523,7 +533,7 @@ int elegirDeLista(const string& titulo, const vector<pair<int, string>>& items)
             aviso = "No existe un item con el ID " + idEscrito + ".";
             idEscrito = "";
         }
-        else if (tecla == 8 || tecla == 127)   // Backspace
+        else if (tecla == 8 || tecla == 127)
         {
             if (!idEscrito.empty())
             {
@@ -542,7 +552,7 @@ int elegirDeLista(const string& titulo, const vector<pair<int, string>>& items)
             {
                 if (idEscrito.empty() && digito == 0)
                 {
-                    return CANCELADO;   // "0" cancela si no se esta escribiendo un ID
+                    return CANCELADO;
                 }
                 idEscrito += (char)('0' + digito);
                 aviso = "";

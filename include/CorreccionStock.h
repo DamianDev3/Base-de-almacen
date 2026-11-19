@@ -4,12 +4,8 @@
 class CorreccionStock
 {
 
-    /////Ideas para corregir el stock: una es usar un ordenamiento de burbuja para que me muestre los productos de que tengan menor stock para que sean los primeros en reponerse
-    ///// Otra es ir producto por producto para ver y analizar cuales hay que reponer y cuales se pueden dejar
-    //// se pueden explorar otras ideas
 public:
 
-    ///// Constructor y Setters
     CorreccionStock();
     CorreccionStock(int, std::string, int, std::string, std::string, int, std::string, int, std::string, int, std::string, int);
     void setIdCorreccion(int);
@@ -25,13 +21,11 @@ public:
     void setUsuarioCorreccion(std::string);
     void setIdMovimiento(int);
     
-    ////Fecha y hora
     void ingresarFechaHoraActual();
     std::string getFechaFormateada() const;
     std::string getHoraFormateada() const;
     std::string getFechaHoraSQL() const;  
 
-    ////// Getters
     int getIdCorreccion() const;
     std::string getFechayHoracorreccion() const;
     int getCodigoInterno() const;

@@ -6,13 +6,11 @@ class PagosVenta
 public:
     PagosVenta();
     PagosVenta(int,int,std::string,double);
-    ////SETTERS
     void setIdPago(int);
     void setIdVTA(int);
     void setMediodePago(std::string);
     void setSubtotal(double);
 
-    ////GETTERS
     int getIdPago() const;
     int getIdVTA() const;
     std::string getMediodePago() const;

@@ -27,11 +27,15 @@ void mostrarUltimaVenta();
 void mostrarUltimoDetalle();
 void mostrarUltimoPago();
 int elegirCategoria(const std::string& titulo);
+int elegirSubcategoria(int idCategoria);
+bool AltaDeProducto(Productos& producto, const std::string& eanPrincipal);
 void AltaDeUsuario(std::string,std::string,std::string,std::string);
 void CompraAutomatica(Productos);
 void MovimientosStock();
+bool consultarStock();
 bool generarCompraDehoy();
-
+void compraHoyHistorial();
+bool compararEan(std::string);
 
 private:
 sqlite3* _db;

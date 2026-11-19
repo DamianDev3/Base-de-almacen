@@ -6,12 +6,10 @@ class DetalleVenta
 {
 public:
 
-    /// CONSTRUCTORES
     DetalleVenta();
     DetalleVenta(int, std::string, std::string, Productos, double, int, double);
     ~DetalleVenta();
 
-    ////SETTERS
     void setIdDetalle(int);
     void setIdVenta(int);
     void setCodigoInterno(std::string);
@@ -21,7 +19,6 @@ public:
     void setCantidadP(int);
     void setSubTotal(double);
 
-    ////GETTERS
     int getIdDetalle() const;
     int getIdVenta() const;
     std::string getCodigoInterno() const;
@@ -31,11 +28,9 @@ public:
     int getCantidadP() const;
     double getSubTotal() const;
 
-    /// Puente con la base de datos: la tabla guarda una "foto" del nombre del
-    /// producto (columna producto), no el objeto Productos completo.
     std::string getProductoSnapshot() const;
     void setProductoSnapshot(std::string);
-    void generarDetalleVTA(Productos&,int);
+    void generarDetalleVTA(Productos&,int,const std::string& ean);
 
 private:
     int _idDetalle;

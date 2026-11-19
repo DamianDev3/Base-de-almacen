@@ -3,16 +3,13 @@
 class subCategoria
 {
     public:
-    /* CONSTRUCTORES Y SETTERS*/
     subCategoria();
     subCategoria(int,int, std::string,bool);
-    ////SETTERS
     void setIdSubcategoria(int);
     void setnombreSubcategoria(std::string);
     void setEstadoSubcategoria(bool);
     void setIDpadre(int);
 
-    ////GETTERS
     int getIdSubcategoria();
     std::string getNombreSubcategoria();
     bool getEstadoSubcategoria();

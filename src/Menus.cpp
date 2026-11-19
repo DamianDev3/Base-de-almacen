@@ -27,32 +27,39 @@ void Menus::Menugeneral()
 
     ClaseUsuarios usuarioLogeado = bd.validarUsuario();
     ClaseUsuarios::setUsuarioLogeado(usuarioLogeado);
-    const std::vector<std::pair<int, std::string>> opcionesDelMenu =
-    {
-
-        {1, "Alta de usuario"},
-        {2, "Mostrar Almacen"},
-        {3, "Leer producto"},
-        {4, "Comprar producto"},
-        {5, "Modificar categorias"},
-        {6, "Ultima venta realizada"},
-        {7, "Ultimo detalle de venta"},
-        {8, "Ultimo pago de venta"},
-        {9, "Modificar stock"},
-        {10, "Movimientos de stock"},
-        {11,"Comprar hoy generado"},
-        {12,"Modificar subcategoria"},
-        {0, "Salir del programa"}
-    };
 
     do
     {
-       /// cout << "Usuario: " << "" << ClaseUsuarios::getUsuarioLogeado().getNombreUsuario() <<endl;
+        std::vector<std::pair<int, std::string>> opcionesDelMenu =
+        {
+            {1, "Alta de usuario"},
+            {2, "Mostrar Almacen"},
+            {3, "Leer producto"},
+            {4, "Vender producto"},
+            {5, "Modificar categorias"},
+            {6, "Ultima venta realizada"},
+            {7, "Ultimo detalle de venta"},
+            {8, "Ultimo pago de venta"},
+            {9, "Modificar stock"},
+            {10, "Movimientos de stock"},
+            {12, "Modificar subcategoria"},
+            {13, "Alta de producto"},
+            {15, "Historial compras automaticas"},
+            {0, "Salir del programa"}
+        };
+
+      
+        if (usuarioLogeado.getRolUsuario() == "ADMINISTRADOR" && bd.consultarStock())
+        {
+            opcionesDelMenu.push_back({99, "Generar compra de hoy (stock bajo)"});
+           /*  bd.generarCompraDehoy(); */
+        }
+
         int opciones = Selector::elegirOpcion("Menu General", opcionesDelMenu);
 
         if (opciones == Selector::CANCELADO)
         {
-            // Sin entrada (fin de archivo) o cancelado: se sale del programa.
+  
             condicion = true;
             break;
         }
@@ -90,12 +97,30 @@ void Menus::Menugeneral()
             bd.MovimientosStock();
             break;
        
-        case 11:
-            movimiento.comprarHoy();
-            break;
        
         case 12:
             bd.SubcategoriasMod();
+            break;
+
+        case 13:
+            productin.altaProducto();
+            break;
+
+        case 14:
+            cout << endl;
+            cout << "=======================================================" << endl;
+            cout << " Compra de hoy: la funcion todavia no esta conectada." << endl;
+            cout << " (Opcion disponible para el Administrador)" << endl;
+            cout << "=======================================================" << endl;
+            system("pause");
+            break;
+
+        case 15:
+            bd.compraHoyHistorial();
+            break;
+
+        case 99:
+            bd.generarCompraDehoy();
             break;
        
         case 0:

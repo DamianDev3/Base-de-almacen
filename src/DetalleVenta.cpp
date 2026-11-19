@@ -6,14 +6,12 @@ using namespace std;
 
 namespace
 {
-    /// Redondea un importe a 2 decimales (centavos).
     double redondearCentavos(double importe)
     {
         return std::round(importe * 100.0) / 100.0;
     }
 }
 
-/// CONSTRUCTORES
 
 DetalleVenta::DetalleVenta()
 {
@@ -42,7 +40,6 @@ DetalleVenta::~DetalleVenta()
 {
 }
 
-/// SETTERS
 
 void DetalleVenta::setIdDetalle(int idDetalle)
 {
@@ -84,7 +81,6 @@ void DetalleVenta::setSubTotal(double subTotal)
     _subTotal = subTotal;
 }
 
-/// GETTERS
 
 int DetalleVenta::getIdDetalle() const
 {
@@ -126,7 +122,6 @@ double DetalleVenta::getSubTotal() const
     return _subTotal;
 }
 
-/// Puente con la columna producto de la base.
 
 string DetalleVenta::getProductoSnapshot() const
 {
@@ -138,14 +133,11 @@ void DetalleVenta::setProductoSnapshot(string nombreProducto)
     _productin.setNombreProducto(nombreProducto);
 }
 
-/// Genera el detalle a partir de un producto y una cantidad: completa sus
-/// datos (codigo interno, EAN, precio y subtotal) y lo muestra con el mismo
-/// formato que usa el ticket de venta.
-void DetalleVenta::generarDetalleVTA(Productos& producto, int cantidad)
+void DetalleVenta::generarDetalleVTA(Productos& producto, int cantidad, const std::string& ean)
 {
     _productin = producto;
     _codigoInterno = std::to_string(producto.getIdProducto());
-    _eanDetectado = producto.getEan();
+    _eanDetectado = ean;
     _precio = producto.getPrecio();
     _cantiadaProdcut = cantidad;
     _subTotal = redondearCentavos(producto.getPrecio() * cantidad);

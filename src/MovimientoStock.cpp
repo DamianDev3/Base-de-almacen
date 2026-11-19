@@ -1,4 +1,5 @@
 #include "MovimientoStock.h"
+#include "../include/GestorBaseDatos.h"
 #include "Selector.h"
 #include <string>
 #include <iostream>
@@ -144,39 +145,4 @@ std::string MovimientoStock::getReferencia() const
     return _referencia;
 }
 
-void MovimientoStock::comprarHoy()
-{
-    bool mostrar =false;
-    int opcionsalir;
-    while (!mostrar)
-    {
-    cout << "==========================" <<endl;
-    cout << "COMPRA DE HOY GENERADA:" << endl; 
-    cout << "==========================" <<endl;
-    cout << endl;
-    cout << "Codigo interno:" << endl;
-    cout << "Ean principal:" << endl;
-    cout << "Producto:" << endl;
-    cout << "Marca:" << endl;
-    cout << "Stock actual:" <<endl;
-    cout << "Stock minimo:" <<endl;
-    cout << "Stock objetivo:" <<endl;
-    cout << "Cantidad sugerida:" <<endl;
-    cout << "Cantidad decidida:" <<endl;
-    cout << "Precio minimo del comparador:" <<endl;
-    cout << "Precio maximo del comparador:" <<endl;
-    cout << "Diferencia" << "" << "%:" <<endl;
-    cout << "Mejor porveedor:" <<endl;
-    cout << "Revision de precios:" <<endl;
-    cout << "Detalle de revision:" <<endl;
-    cout << "Estado de compra:" <<endl;
-    cin >> opcionsalir;
-    system("pause");
-    if (opcionsalir == 1)
-    {
-        mostrar = true;
-    }
-    }
-    
-    
-}
+

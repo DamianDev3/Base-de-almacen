@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
+class Productos;
+
 class MovimientoStock
 {
 public:
-    /// Constructor
     MovimientoStock();
     MovimientoStock(int, std::string, int, std::string, std::string, std::string, std::string, int, int, std::string, std::string);
 
-    ////SETTERS
     void setIdMovimiento(int);
     void setFechaHora(std::string);
     void setCodigoInterno(int);
@@ -20,7 +20,6 @@ public:
     void setUsuario(std::string);
     void setReferencia(std::string);
 
-    ////GETTERS
     int getIdMovimiento() const;
     std::string getFechaHora() const;
     int getCodigoInterno() const;
@@ -33,8 +32,7 @@ public:
     std::string getUsuario() const;
     std::string getReferencia() const;
 
-    //// FUNCIONES
-    void comprarHoy();
+
 
 private:
     int _idMovimiento;

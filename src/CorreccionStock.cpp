@@ -164,7 +164,7 @@ void CorreccionStock::ingresarFechaHoraActual()
     tm* fechaLocal = localtime(&ahora);
     if (fechaLocal != nullptr)
     {
-        char buffer[20];  // "aaaa-mm-dd hh:mm:ss" + fin de cadena
+        char buffer[20];
         strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", fechaLocal);
         _fechayHora = string(buffer);
     }

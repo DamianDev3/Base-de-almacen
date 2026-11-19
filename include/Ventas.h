@@ -6,12 +6,10 @@
 class Ventas
 {
 public:
-///// CONSTRUCTOR
 
 Ventas();
 Ventas(int,std::string,double,double,double,bool);
 ~Ventas();
-////SETTERS
 void setIdVenta(int);
 void setFechaVenta(std::string);
 void setVendedor(std::string);
@@ -25,7 +23,6 @@ void setMotivoAnulacion(std::string);
 void setObservacion(std::string);
 void setTipoMovimiento(std::string);
 
-////GETTERS
 int getIdVenta();
 std::string getFecha();
 std::string getVendedor();
@@ -39,7 +36,6 @@ std::string getMotivoAnulacion();
 std::string getObservacion();
 std::string getTipoMovimiento();
 
-///// FECHA Y HORA (ctime)
 void ingresarFechaHoraActual();
 std::string getFechaFormateada();
 std::string getHoraFormateada();

@@ -22,7 +22,6 @@ PagosVenta::PagosVenta(int idPago, int idVenta, string medioPago, double subTota
     _subtotalVTA = subTotal;
 }
 
-/// SETTERS
 
 void PagosVenta::setIdPago(int idPago)
 {
@@ -44,7 +43,6 @@ void PagosVenta::setSubtotal(double subTotal)
     _subtotalVTA = subTotal;
 }
 
-/// GETTERS
 
 int PagosVenta::getIdPago() const
 {
@@ -66,7 +64,6 @@ double PagosVenta::getSubtotal() const
     return _subtotalVTA;
 }
 
-/// Genera el pago de la venta (medio de pago e importe) y lo muestra.
 void PagosVenta::generarPagodeVenta(Ventas & ventaGenerada)
 {
     _idVentaGenerada = ventaGenerada.getIdVenta();
@@ -82,7 +79,6 @@ void PagosVenta::generarPagodeVenta(Ventas & ventaGenerada)
     cout << "Importe: $" << dinero(_subtotalVTA) << endl;
 }
 
-/// Muestra el pago (lo usa la pantalla "Ultimo pago de venta").
 void PagosVenta::pagoVTAgenerado()
 {
     cout << " Pago N°  : " << _idPago << endl;

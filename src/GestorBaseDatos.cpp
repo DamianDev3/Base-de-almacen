@@ -1,5 +1,6 @@
 #include "../include/GestorBaseDatos.h"
 #include "../include/Productos.h"
+#include "../include/EanProductos.h"
 #include "../include/subCategoria.h"
 #include "../include/Categorias.h"
 #include "../include/ClaseUsuarios.h"
@@ -12,7 +13,9 @@
 #include "../include/ListasDeSistema.h"
 #include "../include/Selector.h"
 #include "../include/Formato.h"
+#include "../include/EanProductos.h"
 #include <cmath>
+#include <ctime>
 #include <iostream>
 #include <sstream>
 #include <utility>
@@ -24,9 +27,6 @@ using namespace sqlite_orm;
 namespace
 {
     
-    /// Todas las funciones del gestor trabajan con este storage.
-    /// Mapeo ORM de las tablas de la base de datos.
-    /// Separa una lista del sistema ("A, B, C") en valores sueltos.
     vector<string> separarLista(const string& valores)
     {
         vector<string> resultado;
@@ -53,9 +53,9 @@ namespace
         return resultado;
     }
 
-    /// Arma un movimiento de stock listo para guardar en el historial.
     MovimientoStock armarMovimiento(const string& fechaHora,
                                     const Productos& producto,
+                                    const string& ean,
                                     const string& tipoMovimiento,
                                     const string& motivo,
                                     int cantidad,
@@ -67,7 +67,7 @@ namespace
         movimiento.setIdMovimiento(0);
         movimiento.setFechaHora(fechaHora);
         movimiento.setCodigoInterno(producto.getIdProducto());
-        movimiento.setEanLeido(producto.getEan());
+        movimiento.setEanLeido(ean);
         movimiento.setProducto(producto.getNombreProducto());
         movimiento.setTipoMovimiento(tipoMovimiento);
         movimiento.setMotivo(motivo);
@@ -76,6 +76,19 @@ namespace
         movimiento.setUsuario(usuario);
         movimiento.setReferencia(referencia);
         return movimiento;
+    }
+
+    string fechaHoraActual()
+    {
+        time_t ahora = std::time(nullptr);
+        std::tm* fechaLocal = std::localtime(&ahora);
+        if (fechaLocal == nullptr)
+        {
+            return "";
+        }
+        char buffer[20];
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", fechaLocal);
+        return string(buffer);
     }
 
     struct CategoriaORM
@@ -112,17 +125,26 @@ namespace
         return make_storage("db/Almacen.db",
             make_table("Productos",
                 make_column("id_producto", &Productos::getIdProducto, &Productos::setIdProducto, primary_key()),
-                make_column("eanProductos", &Productos::getEan, &Productos::setEan, unique()),
                 make_column("nombreProductos", &Productos::getNombreProducto, &Productos::setNombreProducto),
                 make_column("MarcaProductos", &Productos::getMarcaProducto, &Productos::setMarcaProducto),
                 make_column("variantes", &Productos::getVariantes, &Productos::setVariantes),
+                make_column("caracteristicas", &Productos::getCaracteristicas, &Productos::setCaracteristicas),
+                make_column("envase", &Productos::getEnvase, &Productos::setEnvase),
                 make_column("contenido", &Productos::getContenido, &Productos::setContenido),
+                make_column("unidad", &Productos::getUnidad, &Productos::setUnidad),
                 make_column("unidades_pack", &Productos::getUnidades, &Productos::setUnidades),
                 make_column("precio_venta", &Productos::getPrecio, &Productos::setPrecio),
                 make_column("stock_minimo", &Productos::getStockMinimo, &Productos::setStockMinimo),
                 make_column("stock_objetivo", &Productos::getStockObjetivo, &Productos::setStockObjetivo),
                 make_column("stock_actual", &Productos::getStockActual, &Productos::setStockActual),
-                make_column("id_subcategoria", &Productos::getIdSubcategoria, &Productos::setIdSubcategoria)),
+                make_column("id_subcategoria", &Productos::getIdSubcategoria, &Productos::setIdSubcategoria),
+                make_column("observacion", &Productos::getObservacion, &Productos::setObservacion)),
+            make_table("EAN_Productos",
+                make_column("id_ean", &EanProductos::getIdEanProduct, &EanProductos::setIdEanProduct, primary_key(), autoincrement()),
+                make_column("ean", &EanProductos::getEanProductos, &EanProductos::setEanProductos, unique()),
+                make_column("id_producto", &EanProductos::getIdProductoorigen, &EanProductos::setIdProductoorigen),
+                make_column("es_principal", &EanProductos::getEanEsPrincipal, &EanProductos::setEanEsPrincipal),
+                make_column("es_adicional", &EanProductos::getEanEsAdicional, &EanProductos::setEanEsAdicional)),
             make_table("Categorias",
                 make_column("id", &CategoriaORM::id, primary_key(), autoincrement()),
                 make_column("nombre_categorias", &CategoriaORM::nombre)),
@@ -212,6 +234,25 @@ namespace
                 make_column("Diferencia máx.-mín.", &Comparador::getDiferenciaMaxMin, &Comparador::setDiferenciaMaxMin),
                 make_column("Ahorro máximo %", &Comparador::getAhorroMaximo, &Comparador::setAhorroMaximo)));
     }
+
+    /// Devuelve el EAN principal de un producto ("" si no tiene).
+    string eanPrincipalDeProducto(int idProducto)
+    {
+        auto storage = crearStorageAlmacen();
+
+        auto eans = storage.get_all<EanProductos>(
+            where(c(&EanProductos::getIdProductoorigen) == idProducto));
+
+        for (auto &e : eans)
+        {
+            if (e.getEanEsPrincipal())
+            {
+                return e.getEanProductos();
+            }
+        }
+
+        return "";
+    }
 }
 
 GestorBaseDatos::GestorBaseDatos() {
@@ -222,7 +263,6 @@ GestorBaseDatos::~GestorBaseDatos() {
     desconectar();
 }
 
-/// Conexion directa a sqlite (se mantiene por compatibilidad con las otras clases)
 bool GestorBaseDatos::conectar(const char* nombreArchivo) {
     int res = sqlite3_open(nombreArchivo, &_db);
     return (res == SQLITE_OK);
@@ -237,7 +277,6 @@ void GestorBaseDatos::desconectar() {
 
 void GestorBaseDatos::AlmacenInventario()
 {
-    /// Muestra todos los productos con su categoria y subcategoria (inner join)
     auto storage = crearStorageAlmacen();
 
     auto inventario = storage.select(
@@ -263,7 +302,7 @@ void GestorBaseDatos::AlmacenInventario()
         return;
     }
 
-    const int elementosPorPagina = 20;
+    const int elementosPorPagina = 10;
     int totalRegistros = static_cast<int>(inventario.size());
     int totalPaginas = (totalRegistros + elementosPorPagina - 1) / elementosPorPagina;
     int paginaActual = 0;
@@ -292,6 +331,7 @@ void GestorBaseDatos::AlmacenInventario()
                  << " | $" << dinero(get<4>(fila))
                  << " | Stock min: " << get<5>(fila)
                  << " | Stock obj: " << get<6>(fila) << endl;
+            cout << "--------------------------------------------------------------------------------" << endl;
         }
 
         cout << "================================================================================" << endl;
@@ -340,13 +380,17 @@ bool GestorBaseDatos::buscarPorProducto(const char* eanBuscado)
 {
     auto storage = crearStorageAlmacen();
 
-    auto productos = storage.get_all<Productos>(where(c(&Productos::getEan) == string(eanBuscado)));
-    if (productos.empty())
+    auto eans = storage.get_all<EanProductos>(
+        where(c(&EanProductos::getEanProductos) == string(eanBuscado)));
+    if (eans.empty())
     {
         cout << endl << "[!] No se encontro un producto con el EAN " << eanBuscado << endl;
         system("pause");
         return false;
     }
+
+    auto productos = storage.get_all<Productos>(
+        where(c(&Productos::getIdProducto) == eans.front().getIdProductoorigen()));
 
     for (auto &prod : productos)
     {
@@ -380,7 +424,7 @@ void GestorBaseDatos::mostrarBD(int limite)
 
     for (auto &prod : productos)
     {
-        cout << " [" << prod.getEan() << "] " << prod.getNombreProducto()
+        cout << " [" << eanPrincipalDeProducto(prod.getIdProducto()) << "] " << prod.getNombreProducto()
              << " | $" << dinero(prod.getPrecio())
              << " | Stock: " << prod.getStockActual() << endl;
     }
@@ -391,7 +435,6 @@ void GestorBaseDatos::mostrarBD(int limite)
 
 void GestorBaseDatos::buscarCategoria(int idBuscadocat)
 {
-    /// Busca la categoria por ID y muestra sus subcategorias y productos.
     auto storage = crearStorageAlmacen();
 
     auto categorias = storage.get_all<CategoriaORM>(where(c(&CategoriaORM::id) == idBuscadocat));
@@ -432,7 +475,7 @@ void GestorBaseDatos::buscarCategoria(int idBuscadocat)
 
         for (auto &prod : productos)
         {
-            cout << "     * [" << prod.getEan() << "] "
+            cout << "     * [" << eanPrincipalDeProducto(prod.getIdProducto()) << "] "
                  << prod.getNombreProducto()
                  << " | $" << dinero(prod.getPrecio())
                  << " | Stock: " << prod.getStockActual() << endl;
@@ -445,7 +488,6 @@ void GestorBaseDatos::buscarCategoria(int idBuscadocat)
 
 int GestorBaseDatos::elegirCategoria(const std::string& titulo)
 {
-    /// Devuelve el ID de la categoria elegida por el usuario, o Selector::CANCELADO.
     auto storage = crearStorageAlmacen();
 
     auto categorias = storage.get_all<CategoriaORM>(order_by(&CategoriaORM::id));
@@ -463,6 +505,30 @@ int GestorBaseDatos::elegirCategoria(const std::string& titulo)
     }
 
     return Selector::elegirDeLista(titulo, lista);
+}
+
+int GestorBaseDatos::elegirSubcategoria(int idCategoria)
+{
+    auto storage = crearStorageAlmacen();
+
+    auto subcategorias = storage.get_all<SubcategoriaORM>(
+        where(c(&SubcategoriaORM::idCategoria) == idCategoria),
+        order_by(&SubcategoriaORM::id));
+
+    if (subcategorias.empty())
+    {
+        cout << "La categoria elegida no tiene subcategorias cargadas." << endl;
+        system("pause");
+        return Selector::CANCELADO;
+    }
+
+    std::vector<std::pair<int, std::string>> lista;
+    for (auto &sub : subcategorias)
+    {
+        lista.push_back(std::make_pair(sub.id, sub.nombre));
+    }
+
+    return Selector::elegirDeLista("Alta de producto - Elegir subcategoria", lista);
 }
 
 ClaseUsuarios GestorBaseDatos::validarUsuario()
@@ -491,7 +557,7 @@ ClaseUsuarios GestorBaseDatos::validarUsuario()
         {
             cout << "Inicio de sesion cancelado:" <<endl;
             system ("pause");
-            return ClaseUsuarios(); // Retorna un objeto vacío para cancelar
+            return ClaseUsuarios();
         }
 
         cout << "Apellido: ";
@@ -516,11 +582,10 @@ ClaseUsuarios GestorBaseDatos::validarUsuario()
         }
         else
         {
-            // Se extrae la instancia completa encontrada
             ClaseUsuarios usuarioLogueado = ususarioPermisos.front();
             cout << "USUARIO INGRESADO CON EXITO!!" <<endl;
             system ("pause");
-            return usuarioLogueado; // Retorna el objeto completo
+            return usuarioLogueado;
         }
         
     } while (!encontrado);
@@ -530,7 +595,6 @@ ClaseUsuarios GestorBaseDatos::validarUsuario()
 
 void GestorBaseDatos::correccionStockGeneral()
 {
-    /// 1) Validacion de permisos: Administrador o Logistica
     ClaseUsuarios userActual = ClaseUsuarios::getUsuarioLogeado();
     
     if (userActual.getRolUsuario() != "ADMINISTRADOR" && userActual.getRolUsuario() != "LOGISTICA")
@@ -549,7 +613,6 @@ void GestorBaseDatos::correccionStockGeneral()
     system("cls");
     cout << endl << "=========== CORREGIR STOCK  ===========" << endl;
 
-    /// --- 2) Elegir la categoria (igual que en la venta) ---
     auto categorias = storage.get_all<CategoriaORM>(order_by(&CategoriaORM::id));
     if (categorias.empty())
     {
@@ -585,7 +648,6 @@ void GestorBaseDatos::correccionStockGeneral()
         }
     }
 
-    /// --- 3) Elegir la subcategoria de esa categoria ---
     auto subcategorias = storage.get_all<SubcategoriaORM>(
         where(c(&SubcategoriaORM::idCategoria) == idCategoria),
         order_by(&SubcategoriaORM::id));
@@ -624,7 +686,6 @@ void GestorBaseDatos::correccionStockGeneral()
         }
     }
 
-    /// --- 4) Productos de esa subcategoria, primero los de MENOR stock ---
     auto productos = storage.get_all<Productos>(
         where(c(&Productos::getIdSubcategoria) == idSubcategoria),
         multi_order_by(order_by(&Productos::getStockActual), order_by(&Productos::getNombreProducto)));
@@ -646,7 +707,6 @@ void GestorBaseDatos::correccionStockGeneral()
         listaProductos.push_back(std::make_pair(prod.getIdProducto(), texto.str()));
     }
 
-    /// --- 5) Elegir el producto a corregir ---
     int idProducto = Selector::elegirDeLista(
         "Corregir stock | " + categoriaElegida.nombre + " / " + subcategoriaElegida.nombre,
         listaProductos);
@@ -679,7 +739,6 @@ void GestorBaseDatos::correccionStockGeneral()
 
     auto listaSistema = storage.get_all<ListasDeSistema>();
 
-    /// --- 6) Motivo (se elige entre las opciones de la lista del sistema) ---
     std::vector<std::string> motivos;
     if (!listaSistema.empty())
     {
@@ -704,7 +763,6 @@ void GestorBaseDatos::correccionStockGeneral()
         motivo = motivos[motivoElegido - 1];
     }
 
-    /// --- 7) Cantidad a corregir ---
     cout << endl << "Producto: " << producto.getNombreProducto() << endl;
     cout << "Stock actual: " << producto.getStockActual() << " unidades." << endl;
 
@@ -744,7 +802,6 @@ void GestorBaseDatos::correccionStockGeneral()
         break;
     }
 
-    /// --- 8) Direccion del ajuste (SUMA / RESTA) ---
     std::vector<std::string> direcciones;
     if (!listaSistema.empty())
     {
@@ -768,7 +825,6 @@ void GestorBaseDatos::correccionStockGeneral()
         direccion = direcciones[direccionElegida - 1];
     }
 
-    /// --- 9) Calcular el stock resultante ---
     int stockAnterior = producto.getStockActual();
     int stockResultante = (direccion == "RESTA")
         ? stockAnterior - cantidad
@@ -785,12 +841,12 @@ void GestorBaseDatos::correccionStockGeneral()
         }
     }
 
-    /// --- 10) Guardar la correccion y actualizar el stock en una transaccion ---
     CorreccionStock correccion;
     correccion.setIdCorreccion(0);
     correccion.ingresarFechaHoraActual();
     correccion.setCodigoInterno(producto.getIdProducto());
-    correccion.setProductoEan(producto.getEan());
+    string eanProducto = eanPrincipalDeProducto(producto.getIdProducto());
+    correccion.setProductoEan(eanProducto);
     correccion.setProductoCorregido(producto.getNombreProducto());
     correccion.setStockActual(stockAnterior);
     correccion.setListaDeSistemas(motivo);
@@ -809,11 +865,11 @@ void GestorBaseDatos::correccionStockGeneral()
 
             int idCorreccion = storage.insert(correccion);
 
-            /// Movimiento de stock de la correccion (suma o resta).
             int impacto = (direccion == "RESTA") ? -cantidad : cantidad;
             MovimientoStock movimiento = armarMovimiento(
                 correccion.getFechayHoracorreccion(),
                 producto,
+                eanProducto,
                 "CORRECCIÓN",
                 motivo,
                 cantidad,
@@ -822,7 +878,6 @@ void GestorBaseDatos::correccionStockGeneral()
                 "CORRECCIÓN N° " + to_string(idCorreccion));
             int idMovimiento = storage.insert(movimiento);
 
-            /// La correccion queda enlazada a su movimiento.
             correccion.setIdCorreccion(idCorreccion);
             correccion.setIdMovimiento(idMovimiento);
             storage.update(correccion);
@@ -901,7 +956,6 @@ void GestorBaseDatos::SubcategoriasMod()
 void GestorBaseDatos::CategoriasMod()
 {
     bool modificado = false;
-    /// 1) Validación de permisos: solo Administrador
     ClaseUsuarios usuarioLogueado = ClaseUsuarios::getUsuarioLogeado();
     if (usuarioLogueado.getRolUsuario() != "ADMINISTRADOR")
     {
@@ -914,7 +968,6 @@ void GestorBaseDatos::CategoriasMod()
         return;
     }
 
-    /// 2) Menú inicial de decisión
     do
     {
         int opcion = Selector::elegirOpcion(
@@ -936,7 +989,6 @@ void GestorBaseDatos::CategoriasMod()
         {
             case 1:
             {
-                /// --- Modificar categoría existente ---
                 auto categorias = storage.get_all<CategoriaORM>(order_by(&CategoriaORM::id));
                 if (categorias.empty())
                 {
@@ -957,7 +1009,6 @@ void GestorBaseDatos::CategoriasMod()
                     break;
                 }
 
-                // Buscar la categoría por su ID
                 CategoriaORM categoriaElegida;
                 bool encontrada = false;
                 for (const auto &cat : categorias)
@@ -1008,7 +1059,6 @@ void GestorBaseDatos::CategoriasMod()
             case 2:
             {
                 system("cls");
-                /// --- Crear una nueva categoría ---
                 cout << "\nIngrese el nombre de la nueva categoria: ";
                 string nuevoNombre;
                 cin >> ws;
@@ -1024,7 +1074,7 @@ void GestorBaseDatos::CategoriasMod()
                 try
                 {
                     CategoriaORM nuevaCategoria;
-                    nuevaCategoria.id = 0; // SQLite asigna el autoincrement
+                    nuevaCategoria.id = 0;
                     nuevaCategoria.nombre = nuevoNombre;
                     storage.insert(nuevaCategoria);
                     cout << "Categoria creada con exito." << endl;
@@ -1062,10 +1112,31 @@ void GestorBaseDatos::AltaDeUsuario(string nombreu, string apellidou, string rol
         system("pause");
         return;
     }
+
+    if (nombreu.empty() || apellidou.empty() || password.empty())
+    {
+        cout << "ERROR: nombre, apellido y contrasena son obligatorios." << endl;
+        return;
+    }
+
+    if (roluser != "ADMINISTRADOR" && roluser != "LOGISTICA" && roluser != "VENDEDOR")
+    {
+        cout << "ERROR: el rol indicado no es valido." << endl;
+        return;
+    }
+
     auto storage = crearStorageAlmacen();
 
     try
     {
+        auto existentes = storage.get_all<ClaseUsuarios>(
+            where(c(&ClaseUsuarios::getNombreUsuario) == nombreu));
+        if (!existentes.empty())
+        {
+            cout << "Ya existe un usuario con el nombre \"" << nombreu << "\"." << endl;
+            return;
+        }
+
         ClaseUsuarios usuario;
         usuario.setNombreUsuario(nombreu);
         usuario.setApellidoUsuario(apellidou);
@@ -1073,7 +1144,8 @@ void GestorBaseDatos::AltaDeUsuario(string nombreu, string apellidou, string rol
         usuario.setRolUsuario(roluser);
 
         storage.insert(usuario);
-        cout << "USUARIO AGREGADO!!" << endl;
+        cout << "USUARIO AGREGADO: " << nombreu << " " << apellidou
+             << " (" << roluser << ")" << endl;
     }
     catch (const std::exception &e)
     {
@@ -1081,11 +1153,77 @@ void GestorBaseDatos::AltaDeUsuario(string nombreu, string apellidou, string rol
     }
 }
 
+bool GestorBaseDatos::AltaDeProducto(Productos& producto, const std::string& eanPrincipal)
+{
+    ClaseUsuarios usuarioLogeado = ClaseUsuarios::getUsuarioLogeado();
+    if (usuarioLogeado.getRolUsuario() != "ADMINISTRADOR")
+    {
+        cout << "Solo un ADMINISTRADOR puede dar de alta productos." << endl;
+        return false;
+    }
+
+    if (eanPrincipal.empty() || producto.getNombreProducto().empty())
+    {
+        cout << "ERROR: el EAN y el nombre del producto son obligatorios." << endl;
+        return false;
+    }
+
+    auto storage = crearStorageAlmacen();
+
+    auto mismoEan = storage.get_all<EanProductos>(
+        where(c(&EanProductos::getEanProductos) == eanPrincipal));
+    if (!mismoEan.empty())
+    {
+        cout << "Ya existe un producto con el EAN " << eanPrincipal << "." << endl;
+        return false;
+    }
+
+    auto productos = storage.get_all<Productos>(order_by(&Productos::getIdProducto));
+    int nuevoId = productos.empty() ? 1 : productos.back().getIdProducto() + 1;
+    producto.setIdProducto(nuevoId);
+
+    try
+    {
+        storage.transaction([&]() mutable {
+            storage.insert(producto);
+
+            /// El EAN con el que se da de alta queda como principal.
+            EanProductos ean;
+            ean.setEanProductos(eanPrincipal);
+            ean.setIdProductoorigen(producto.getIdProducto());
+            ean.setEanEsPrincipal(true);
+            ean.setEanEsAdicional(false);
+            storage.insert(ean);
+
+            if (producto.getStockActual() > 0)
+            {
+                MovimientoStock movimiento = armarMovimiento(
+                    fechaHoraActual(),
+                    producto,
+                    eanPrincipal,
+                    "ALTA INICIAL",
+                    "ALTA DE PRODUCTO",
+                    producto.getStockActual(),
+                    producto.getStockActual(),
+                    usuarioLogeado.getNombreUsuario() + " " + usuarioLogeado.getApellidoUsuario(),
+                    "ALTA PRODUCTO N° " + to_string(producto.getIdProducto()));
+                storage.insert(movimiento);
+            }
+
+            return true;
+        });
+        return true;
+    }
+    catch (const std::exception &e)
+    {
+        cout << "ERROR al guardar el producto: " << e.what() << endl;
+        return false;
+    }
+}
+
 void GestorBaseDatos::venderProducto()
 {
 
-    /////Para las lista del sistema hay que crear esas opciones que estan en el excel para que se puedan utilizar aca
-    ///// Para que luego se enlacen en la base de datos y formen parte del programa principal
     
     ClaseUsuarios userComplete = ClaseUsuarios::getUsuarioLogeado();
 
@@ -1108,7 +1246,6 @@ void GestorBaseDatos::venderProducto()
     
     
 
-    /// --- 1) Elegir la categoria ---
     auto categorias = storage.get_all<CategoriaORM>(order_by(&CategoriaORM::id));
     if (categorias.empty())
     {
@@ -1122,8 +1259,6 @@ void GestorBaseDatos::venderProducto()
     {
         listaCategorias.push_back(std::make_pair(cat.id, cat.nombre));
     }
-    /// [CAMBIO APLICADO EN LA LINEA 788] El titulo del selector de categoria
-    /// muestra el nombre y el rol del usuario logueado (userComplete, linea 744).
     int idCategoria = Selector::elegirDeLista(
         "Comprar producto | Elegir categoria",
         listaCategorias);
@@ -1144,7 +1279,6 @@ void GestorBaseDatos::venderProducto()
         }
     }
 
-    /// --- 2) Elegir la subcategoria de esa categoria ---
     auto subcategorias = storage.get_all<SubcategoriaORM>(
         where(c(&SubcategoriaORM::idCategoria) == idCategoria),
         order_by(&SubcategoriaORM::id));
@@ -1162,8 +1296,6 @@ void GestorBaseDatos::venderProducto()
         listaSubcategorias.push_back(std::make_pair(sub.id, sub.nombre));
     }
 
-    /// [CAMBIO APLICADO EN LA LINEA 830] El titulo del selector de subcategoria
-    /// muestra el nombre y el rol del usuario logueado (userComplete, linea 744).
     int idSubcategoria = Selector::elegirDeLista(
         "Comprar producto | Elegir subcategoria",
         listaSubcategorias);
@@ -1184,7 +1316,6 @@ void GestorBaseDatos::venderProducto()
         }
     }
 
-    /// --- 3) Mostrar los productos de esa subcategoria ---
     auto productos = storage.get_all<Productos>(
         where(c(&Productos::getIdSubcategoria) == idSubcategoria),
         order_by(&Productos::getNombreProducto));
@@ -1205,9 +1336,6 @@ void GestorBaseDatos::venderProducto()
         listaProductos.push_back(std::make_pair(prod.getIdProducto(), texto.str()));
     }
 
-    /// --- 4) Elegir el producto a comprar ---
-    /// [CAMBIO APLICADO EN LA LINEA 876] El titulo del selector muestra el
-    /// nombre y el rol del usuario logueado (userComplete, declarado en la linea 744). 
     int idProducto = Selector::elegirDeLista(
         "Comprar producto | " + categoriaElegida.nombre + " / " + subcategoriaElegida.nombre,
         listaProductos);
@@ -1237,7 +1365,6 @@ void GestorBaseDatos::venderProducto()
         return;
     }
 
-    /// --- 5) Cantidad a comprar (se descuenta automaticamente del stock) ---
     int cantidad = 0;
     bool cantidadValida = false;
 
@@ -1283,7 +1410,6 @@ void GestorBaseDatos::venderProducto()
         cantidadValida = true;
     }
 
-    /// --- 6) Descontar la cantidad del stock y guardar con el ORM ---
     int stockAnterior = producto.getStockActual();
     producto.setStockActual(stockAnterior - cantidad);
 
@@ -1299,7 +1425,6 @@ void GestorBaseDatos::venderProducto()
         return;
     }
 
-    /// --- 7) Venta: se completan los datos (vendedor, fecha y total) ---
     auto productoVerificado = storage.get<Productos>(producto.getIdProducto());
 
     cout << endl << "Stock actualizado: " << stockAnterior
@@ -1309,13 +1434,11 @@ void GestorBaseDatos::venderProducto()
     Ventas venta;
     venta.realizarVenta(productoVerificado, cantidad);
 
-    /// El vendedor es el usuario que inicio sesion al principio.
     venta.setVendedor(userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario());
     cout << "Vendedor: " << venta.getVendedor() << endl;
 
     venta.setTipoMovimiento("VENTA");
 
-    /// --- 8) Pago del cliente y medio de pago ---
     venta.registrarPagoCliente();
 
     auto listaSistema = storage.get_all<ListasDeSistema>();
@@ -1344,11 +1467,11 @@ void GestorBaseDatos::venderProducto()
         }
     }
 
-    /// --- 9) Se arma el detalle de la venta (producto + cantidad) ---
-    DetalleVenta detalleVenta;
-    detalleVenta.generarDetalleVTA(productoVerificado, cantidad);
+    string eanProducto = eanPrincipalDeProducto(productoVerificado.getIdProducto());
 
-    /// --- 10) Guardar la venta en la base: Ventas + Detalle_Ventas + Pagos_Venta ---
+    DetalleVenta detalleVenta;
+    detalleVenta.generarDetalleVTA(productoVerificado, cantidad, eanProducto);
+
     int idVentaGuardada = 0;
     int idMovimientoVenta = 0;
     try
@@ -1380,10 +1503,10 @@ void GestorBaseDatos::venderProducto()
             pago.generarPagodeVenta(venta);
             storage.insert(pago);
 
-            /// Movimiento de stock de la venta (resta).
             MovimientoStock movimiento = armarMovimiento(
                 venta.getFechaHoraSQL(),
                 productoVerificado,
+                eanProducto,
                 "VENTA",
                 "",
                 cantidad,
@@ -1403,17 +1526,12 @@ void GestorBaseDatos::venderProducto()
         cout << "ERROR al guardar la venta en la base: " << e.what() << endl;
     }
 
-    /// --- 11) Ticket de la venta ---
     venta.mostrarTicket(productoVerificado, cantidad);
 
-    /// --- 12) Despues del ticket, el ADMINISTRADOR puede anular la venta ---
-    ///  La venta ya quedo guardada: se marca ANULADA con el motivo y la
-    ///  observacion, y se devuelve el stock descontado.
     if (userComplete.getRolUsuario() == "ADMINISTRADOR" && idVentaGuardada > 0)
     {
         if (Selector::confirmar("¿Desea anular la venta?"))
         {
-            /// Motivo: se elige entre las opciones de la lista del sistema.
             vector<string> motivos;
             if (!listaSistema.empty())
             {
@@ -1438,7 +1556,6 @@ void GestorBaseDatos::venderProducto()
                 motivo = motivos[motivoElegido - 1];
             }
 
-            /// Tipo de movimiento: opcion "ANULACIÓN VENTA" de la lista del sistema.
             string tipoAnulacion = "ANULACIÓN VENTA";
             if (!listaSistema.empty())
             {
@@ -1453,7 +1570,6 @@ void GestorBaseDatos::venderProducto()
                 }
             }
 
-            /// Datos de la anulacion (tambien pide la observacion).
             venta.anular(userComplete.getNombreUsuario() + " " + userComplete.getApellidoUsuario(), motivo);
             venta.setTipoMovimiento(tipoAnulacion);
 
@@ -1462,7 +1578,6 @@ void GestorBaseDatos::venderProducto()
             {
                 storage.transaction([&]() mutable {
 
-                    /// La venta guardada se marca ANULADA (no se borra).
                     VentaORM ventaAnuladaORM = storage.get<VentaORM>(idVentaGuardada);
                     ventaAnuladaORM.estadoVenta = "ANULADA";
                     ventaAnuladaORM.tipoMovimiento = tipoAnulacion;
@@ -1472,14 +1587,13 @@ void GestorBaseDatos::venderProducto()
                     ventaAnuladaORM.observacion = venta.getObservacion();
                     storage.update(ventaAnuladaORM);
 
-                    /// Se devuelve el stock descontado.
                     productoVerificado.setStockActual(productoVerificado.getStockActual() + cantidad);
                     storage.update(productoVerificado);
 
-                    /// Movimiento inverso de la anulacion (suma).
                     MovimientoStock movimiento = armarMovimiento(
                         venta.getFechaHoraAnulacion(),
                         productoVerificado,
+                        eanProducto,
                         tipoAnulacion,
                         motivo,
                         cantidad,
@@ -1512,7 +1626,6 @@ void GestorBaseDatos::venderProducto()
 
 void GestorBaseDatos::mostrarUltimaVenta()
 {
-    /// Muestra la ultima venta guardada en la base de datos (con su detalle y pago).
     auto storage = crearStorageAlmacen();
 
     auto ventas = storage.get_all<VentaORM>(order_by(&VentaORM::idVenta));
@@ -1579,7 +1692,6 @@ void GestorBaseDatos::mostrarUltimaVenta()
 
 void GestorBaseDatos::mostrarUltimoDetalle()
 {
-    /// Muestra el ultimo detalle de venta registrado (aparte de la venta).
     auto storage = crearStorageAlmacen();
 
     auto detalles = storage.get_all<DetalleVenta>(order_by(&DetalleVenta::getIdDetalle));
@@ -1610,7 +1722,6 @@ void GestorBaseDatos::mostrarUltimoDetalle()
 
 void GestorBaseDatos::mostrarUltimoPago()
 {
-    /// Muestra el ultimo pago de venta registrado.
     auto storage = crearStorageAlmacen();
 
     auto pagos = storage.get_all<PagosVenta>(order_by(&PagosVenta::getIdPago));
@@ -1633,7 +1744,6 @@ void GestorBaseDatos::mostrarUltimoPago()
 
 void GestorBaseDatos::MovimientosStock()
 {
-    /// Muestra los ultimos movimientos de stock registrados.
     
     auto storage = crearStorageAlmacen();
 
@@ -1680,10 +1790,21 @@ void GestorBaseDatos::MovimientosStock()
     system("pause");
 }
 
+bool GestorBaseDatos::consultarStock()
+{
+    auto abrirAlmacen = crearStorageAlmacen();
+
+    auto cantidad = abrirAlmacen.count<Productos>(
+        where(c(&Productos::getStockActual) < &Productos::getStockMinimo));
+        
+
+    return cantidad > 0;
+}
+
 bool GestorBaseDatos::generarCompraDehoy()
 {
-  
     ClaseUsuarios usuarioLogueado = ClaseUsuarios::getUsuarioLogeado();
+    MovimientoStock compraAutomatica;
     if (usuarioLogueado.getRolUsuario() != "ADMINISTRADOR")
     {
         cout << "======= USUARIO INVALIDO =======" << endl;
@@ -1692,7 +1813,7 @@ bool GestorBaseDatos::generarCompraDehoy()
         cout << "Su rol de " << "" << usuarioLogueado.getRolUsuario() << "" << " no esta autorizado:" << endl;
         cout << "==============================" <<endl;
         system("pause");
-        return;
+        return false;
     } 
     bool compraGenerada = false;
     auto abrirAlmacen = crearStorageAlmacen();
@@ -1700,20 +1821,18 @@ bool GestorBaseDatos::generarCompraDehoy()
     auto comparador = abrirAlmacen.get_all<Comparador>(order_by(&Comparador::getMejorPrecio)); 
     auto listaSistemasOpc = abrirAlmacen.get_all<ListasDeSistema>(order_by(&ListasDeSistema::getEstadoCompra));
     
-    /*  COSAS QUE NO SON UTILIZABLES DE MOMENTO
+    /*
     auto subCateto = abrirAlmacen.get_all<SubcategoriaORM>(order_by(&SubcategoriaORM::id));
     auto category = abrirAlmacen.get_all<CategoriaORM>(order_by(&CategoriaORM::id));
      */
     vector<ListasDeSistema>listaDeOpcionesSistema;
     vector<Productos>reposicionDeproductos;
     vector<Comparador>listaPreciosCompradaror;
-    /////ciclo para recorrer los productos que tienen stock bajo
     for (auto &recorrer : comprarHoy)
     {
 
-                    if (recorrer.getStockActual() <= recorrer.getStockMinimo())
+                    if (recorrer.getStockActual() < recorrer.getStockMinimo())
                     {
-                    ///Lista de productos con stock igual o menor al minimo
                         reposicionDeproductos.push_back(recorrer); 
                         cout << "Producto /s con stock bajo:" <<endl;
                         recorrer.getNombreProducto();
@@ -1726,7 +1845,7 @@ bool GestorBaseDatos::generarCompraDehoy()
             {
                 cout << "No hay productos para reponer:" <<endl;
                 system("pause");
-                return; 
+                return false; 
             }
             
             for (auto &mejorPrecio : comparador)
@@ -1740,29 +1859,28 @@ bool GestorBaseDatos::generarCompraDehoy()
                 
             }
             
-            cout << "¿Desea generar una compra de este producto?" <<endl;
-            system("pause");
+           /*  cout << "¿Desea generar una compra de este producto?" <<endl;
+            system("pause"); */
     
         ListasDeSistema opcionesCargadas = listaDeOpcionesSistema.front();
-    /////ciclos para generar la compra automatica del dia
         int idcodigoInterno, stockActual, stockMinimo, stockObjetivo;
         int cantidadSugerida, cantidadDecidida;
         double preciominimoComparardor, precioMaxcomparador, diferencia;
         string eanProducto, producto, marcaProducto, mejorProveedor;
-        string revisionPrecio, detalleRevision, estadoCompra; // Tipo string según 'Listas sistema'
+        string revisionPrecio, detalleRevision, estadoCompra;
         bool eanDetectados = false;
 
-// 2. Procesamiento de los productos a reponer
 for (auto &stockBajo : reposicionDeproductos)
 {
     eanDetectados = false;
+    eanProducto = eanPrincipalDeProducto(stockBajo.getIdProducto());
     preciominimoComparardor = 0.0;
     precioMaxcomparador = 0.0;
     diferencia = 0.0;
     mejorProveedor = "-";
     for (auto &datosComp : comparador)
     {
-        if (datosComp.getCodigoEanSepa() == stockBajo.getEan()){
+        if (datosComp.getCodigoEanSepa() == eanProducto){
             eanDetectados = true;
             preciominimoComparardor = datosComp.getMejorPrecio();
             mejorProveedor = datosComp.getMayoristaMasBarato();
@@ -1771,48 +1889,161 @@ for (auto &stockBajo : reposicionDeproductos)
             break;
         }
        
-    }///// fin del ciclo
+    }
     if(eanDetectados)
     {
-    revisionPrecio = opcionesCargadas.getRevisionPrecio();         // Opciones: OK, REVISAR, MAL
+    revisionPrecio = opcionesCargadas.getRevisionPrecio();
     detalleRevision = "Proveedor asignado por comparador"; 
-       
-    }
-    else
-    {
-        mejorProveedor = "SIN COMPARADOR";
-        revisionPrecio = "REVISAR";
-        detalleRevision = "EAN no figura en comparador";
-    }
-    idcodigoInterno = stockBajo.getIdProducto();
-    eanProducto = stockBajo.getEan();
+}
+else
+{
+    mejorProveedor = "SIN COMPARADOR";
+    revisionPrecio = "REVISAR";
+    detalleRevision = "EAN no figura en comparador";
+}
+
+idcodigoInterno = stockBajo.getIdProducto();
     producto = stockBajo.getNombreProducto();
     marcaProducto = stockBajo.getMarcaProducto();
     stockActual = stockBajo.getStockActual();
     stockMinimo = stockBajo.getStockMinimo();
     stockObjetivo = stockBajo.getStockObjetivo();
-
-    // Cantidades requeridas para la compra
+    
     cantidadSugerida = stockObjetivo - stockActual;
     cantidadDecidida = cantidadSugerida;
-    estadoCompra = opcionesCargadas.getEstadoCompra();    // Opciones: PENDIENTE, COMPRADO, OMITIDO
+    estadoCompra = opcionesCargadas.getEstadoCompra();  
     stockBajo.setStockActual(stockBajo.getStockActual() + cantidadDecidida);
-
     
-abrirAlmacen.update_all(
-   sqlite_orm::set(c(&Productos::setStockActual) = stockBajo.getStockActual()),
-    where(c(&Productos::getIdProducto) == stockBajo.getIdProducto())
-);    
-        cout << "============================"<<endl;
-cout << "Compra de hoy del producto generada: " << producto 
-         << " | Cantidad repuesta: " << cantidadDecidida 
-         << " | Nuevo Stock (en memoria): " << stockBajo.getStockActual() << endl;
-         cout << "============================"<<endl;
+    string referenciaCompra = "COMPRA HOY - " + mejorProveedor;
+    if (eanDetectados)
+    {
+        referenciaCompra += " - $" + dinero(preciominimoComparardor);
+    }
 
-        cout << "Compra generada" <<endl;
+    compraAutomatica = armarMovimiento(
+        fechaHoraActual(),
+        stockBajo,
+        eanProducto,
+        "INGRESO",
+        "COMPRA AUTOMATICA",
+        cantidadDecidida,
+        cantidadDecidida,
+        usuarioLogueado.getNombreUsuario() + " " + usuarioLogueado.getApellidoUsuario(),
+        referenciaCompra);
+
+    try
+    {
+        abrirAlmacen.transaction([&]() mutable {
+            abrirAlmacen.update(stockBajo);
+            abrirAlmacen.insert(compraAutomatica);
+            return true;
+        });
+    }
+    catch (const std::exception &e)
+    {
+        cout << "ERROR al registrar la compra de hoy: " << e.what() << endl;
+        continue;
+    }
+    cout << "============================"<<endl;
+    cout << "Compra de hoy del producto generada: " << producto 
+    << " | Cantidad repuesta: " << cantidadDecidida 
+    << " | Nuevo Stock (en memoria): " << stockBajo.getStockActual() << endl;
+    cout << "============================"<<endl;
+    
+    cout << "Compra generada" <<endl;
     compraGenerada = true;
+    
+    /* compraAutomatica.comprarHoyHistorial(stockBajo); */
+    
+    system("pause"); 
 }
+
 return compraGenerada;
 }
 
-   
+void GestorBaseDatos::compraHoyHistorial()
+{
+    auto storage = crearStorageAlmacen();
+
+    auto movimientos = storage.get_all<MovimientoStock>(order_by(&MovimientoStock::getIdMovimiento));
+
+    vector<MovimientoStock> compras;
+    for (auto &mov : movimientos)
+    {
+        if (mov.getTipoMovimiento() == "INGRESO" && mov.getMotivo() == "COMPRA AUTOMATICA")
+        {
+            compras.push_back(mov);
+        }
+    }
+
+    if (compras.empty())
+    {
+        cout << endl << "[!] No hay compras automaticas registradas." << endl;
+        system("pause");
+        return;
+    }
+
+    const int ultimas = 30;
+    int inicio = (int)compras.size() - ultimas;
+    if (inicio < 0)
+    {
+        inicio = 0;
+    }
+
+    system("cls");
+    cout << endl;
+    cout << "============= HISTORIAL DE COMPRAS AUTOMATICAS =============" << endl;
+    for (int i = inicio; i < (int)compras.size(); i++)
+    {
+        MovimientoStock &mov = compras[i];
+        cout << " ID mov.   : " << mov.getIdMovimiento() << endl;
+        cout << " Fecha     : " << mov.getFechaHora() << endl;
+        cout << " Producto  : " << mov.getProducto() << endl;
+        cout << " EAN       : " << mov.getEanLeido() << endl;
+        cout << " Cantidad  : " << mov.getCantidad() << endl;
+        cout << " Impacto   : +" << mov.getImpactoStock() << endl;
+        cout << " Usuario   : " << mov.getUsuario() << endl;
+        cout << " Referencia: " << mov.getReferencia() << endl;
+        cout << " -----------------------------------------------------------" << endl;
+    }
+    cout << " Total de compras registradas: " << compras.size() << endl;
+    cout << "============================================================" << endl;
+
+    system("pause");
+}
+
+bool GestorBaseDatos::compararEan(std::string eanAcomparar)
+{
+ 
+
+    bool existe = false;
+    EanProductos miniEan;
+    Productos product;
+    auto apertura = crearStorageAlmacen();
+    auto traerDatos = apertura.get_all<EanProductos>(order_by(&EanProductos::getIdEanProduct)); 
+    for (auto& ciclo : traerDatos)
+    {
+        if (ciclo.getEanProductos() == eanAcomparar)
+        {
+            existe = true;
+        }
+        if(ciclo.getEanProductos() != eanAcomparar || ciclo.getIdProductoorigen() == product.getIdProducto())
+        {
+            miniEan.setEanEsAdicional(true);
+            miniEan.setEanEsPrincipal(false);
+        }
+        
+    }
+    if (existe == true)
+    {
+        miniEan.setEanEsPrincipal(false);
+    }
+    else {
+        miniEan.setEanEsPrincipal(true);
+    }
+
+return existe;
+}
+
+
+

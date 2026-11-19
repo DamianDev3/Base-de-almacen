@@ -3,11 +3,9 @@
 class Comparador
 {
 public:
-    /// Constructor
     Comparador();
     Comparador(std::string, std::string, std::string, double, double, double, double, double, std::string, int, double, double);
 
-    ////SETTERS
     void setCodigoEanSepa(std::string);
     void setProducto(std::string);
     void setMarca(std::string);
@@ -21,7 +19,6 @@ public:
     void setDiferenciaMaxMin(double);
     void setAhorroMaximo(double);
 
-    ////GETTERS
     std::string getCodigoEanSepa() const;
     std::string getProducto() const;
     std::string getMarca() const;
@@ -36,17 +33,16 @@ public:
     double getAhorroMaximo() const;
 
 private:
-    /// Cada campo coincide con una columna de la tabla Comparador.
-    std::string _codigoEanSepa;        // "Código / EAN SEPA"
-    std::string _producto;             // "Producto"
-    std::string _marca;                // "Marca"
-    double _makroBenavidez;            // "Makro Benavídez"
-    double _yaguarMaschwitz;           // "Yaguar Maschwitz"
-    double _maxiconsumoPacheco;        // "Maxiconsumo Pacheco"
-    double _vitalElTalar;              // "Vital El Talar"
-    double _mejorPrecio;               // "Mejor precio"
-    std::string _mayoristaMasBarato;   // "Mayorista más barato"
-    int _cantPrecios;                  // "Cant. precios"
-    double _diferenciaMaxMin;          // "Diferencia máx.-mín."
-    double _ahorroMaximo;              // "Ahorro máximo % (valor de porcentaje)"
+    std::string _codigoEanSepa;
+    std::string _producto;
+    std::string _marca;
+    double _makroBenavidez;
+    double _yaguarMaschwitz;
+    double _maxiconsumoPacheco;
+    double _vitalElTalar;
+    double _mejorPrecio;
+    std::string _mayoristaMasBarato;
+    int _cantPrecios;
+    double _diferenciaMaxMin;
+    double _ahorroMaximo;
 };
